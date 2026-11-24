@@ -37,6 +37,8 @@
 | `/` | ランディング（特徴・料金・無料/Pro比較表・FAQ・ログイン導線） |
 | `/app` | 利用状況バナー＋顔抽出ツール本体（**ログイン不要**。Pro/AI超解像を使う時だけログイン） |
 | `/signin` | Google / メール（マジックリンク）ログイン |
+| `/auth/callback` | ログインリンクの受け口（`#access_token=...` をクライアントで処理してセッションCookie化） |
+| `/auth/exchange` | `?code=`（Google OAuth などの PKCE）をサーバー側で交換してCookieを付与 |
 | `/terms` | 利用規約 |
 | `/privacy` | プライバシーポリシー |
 | `/tokushoho` | 特定商取引法に基づく表記（環境変数で差し替え） |
@@ -70,6 +72,7 @@ npm start       # 本番サーバー
 npm run build
 python3 scripts/verify.py       # Playwright（PC 1280px / iPhone 390px・デモモード）
 python3 scripts/verify-anon.py  # 本番設定（Supabase env あり）で未ログイン導線を実測
+python3 scripts/verify-auth.py  # メールログインのコールバック・エラー表示（デモ / env あり）
 ```
 
 `scripts/verify.py` は本番ビルドを起動し、以下を自動確認して `screenshots/` に画像を保存します。
@@ -85,6 +88,19 @@ python3 scripts/verify-anon.py  # 本番設定（Supabase env あり）で未ロ
 `scripts/verify-anon.py` は Supabase の環境変数だけ入れた「本番に近い」状態で起動し、
 未ログインのまま `/` → `/app` に入れること、解析で残り3→2・リロードで維持、4本目は429、
 300秒超は403（回数消費なし）、CookieのHttpOnly・署名（改ざん・未来日付は無効）を確認します。
+
+## メールログインの仕組み（PKCE を使わない理由）
+
+メールのログインリンクは **implicit フロー** で送ります（`src/lib/supabase/implicit.ts`）。
+`@supabase/ssr` の既定は PKCE で、リンクを開いたブラウザに `code_verifier` Cookie が残っていないと
+`exchangeCodeForSession` が失敗します（iPhone の Gmail アプリ内ブラウザで開くと必ず失敗）。
+implicit ならリンクを踏むと `/auth/callback#access_token=...&refresh_token=...` が返り、
+クライアント側（`CallbackClient.tsx`）で `setSession` して Cookie に保存するため、どのブラウザからでもログインできます。
+
+- リンクは1回だけ有効（既定1時間）。期限切れ・使用済みは `#error_code=otp_expired` で戻るので `/signin?error=expired` を表示。
+- Google OAuth は従来どおり PKCE（`/auth/google` → `/auth/callback?code=...` → `/auth/exchange` で交換）。
+- 認証 Cookie は `NextResponse` に直接セットします（`cookies()` の Set-Cookie がリダイレクトで落ちる環境対策）。
+- Supabase の無料プラン（カスタムSMTPなし）ではメールテンプレートを編集できず、6桁コードをメールに載せられないため、コード入力ログインは実装していません。
 
 ## ディレクトリ
 

@@ -25,6 +25,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   email: 'メールアドレスの形式を確認してください。',
   send: 'ログインメールを送信できませんでした。時間をおいてもう一度お試しください。',
   auth: 'ログインの確認に失敗しました。もう一度お試しください。',
+  expired:
+    'ログインリンクの有効期限が切れているか、すでに使用済みです。お手数ですが、もう一度ログインリンクを送信してください。',
   google: 'Googleログインを開始できませんでした。メールでのログインをお試しください。',
   demo: 'Supabaseが未設定のため、ログインは利用できません（デモモード）。',
 };
@@ -69,6 +71,8 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
           <div className="notice notice-success">
             <b>{sp.email ?? 'ご入力のメールアドレス'}</b> にログインリンクを送りました。メールを開いてリンクを押すと
             ログインできます（迷惑メールフォルダもご確認ください）。
+            <br />
+            リンクは1回だけ使えます（有効期限は約1時間）。同じリンクを2回押すと期限切れになります。
           </div>
         ) : null}
 
@@ -95,6 +99,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
                   inputMode="email"
                   autoComplete="email"
                   required
+                  defaultValue={sp.email ?? ''}
                   placeholder="you@example.com"
                 />
                 <span className="field-hint">パスワードは不要です。ログイン用のリンクをお送りします。</span>
