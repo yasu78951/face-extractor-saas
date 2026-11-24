@@ -3,13 +3,58 @@ import './globals.css';
 import { getViewer, type Viewer } from '@/lib/auth';
 import { SiteFooter, SiteHeader } from '@/components/SiteHeader';
 import { isDemoMode } from '@/lib/env';
+import {
+  SITE_DESCRIPTION,
+  SITE_KEYWORDS,
+  SITE_NAME,
+  SITE_OG_IMAGE,
+  SITE_TITLE,
+  SITE_URL,
+} from '@/lib/site';
+
+/** Google Search Console の所有権確認トークン（環境変数 NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION で差し替え可能） */
+const googleSiteVerification =
+  process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || 'n3ASV73EFZW1g2zgjQWNVcRHV0-kmr0ZTCiGlSVm__E';
 
 export const metadata: Metadata = {
-  title: 'ベストショット抽出 | 動画から顔写真を自動抽出',
-  description:
-    '動画から「正面・ピント・大きさ」でベストショットを自動抽出。処理はすべて端末内で完結し、動画が外部に送信されることはありません。無料プランは1日3本・5分まで、Proプラン（月額500円）は本数無制限・AI超解像つき。',
-  applicationName: 'ベストショット抽出',
-  robots: { index: true, follow: true },
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: SITE_TITLE,
+    template: `%s｜${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  keywords: SITE_KEYWORDS,
+  applicationName: SITE_NAME,
+  authors: [{ name: SITE_NAME, url: SITE_URL }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  openGraph: {
+    type: 'website',
+    locale: 'ja_JP',
+    siteName: SITE_NAME,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    images: [SITE_OG_IMAGE],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [SITE_OG_IMAGE.url],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
+  },
+  verification: { google: googleSiteVerification },
 };
 
 export const viewport: Viewport = {

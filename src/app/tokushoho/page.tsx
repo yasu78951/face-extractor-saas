@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { addressDisplay, legal, phoneDisplay } from '@/lib/legal';
+import { pageMetadata } from '@/lib/site';
 
-export const metadata: Metadata = {
-  title: '特定商取引法に基づく表記 | ベストショット抽出',
-  description: 'ベストショット抽出（Proプラン）の特定商取引法に基づく表記です。',
-};
+export const metadata: Metadata = pageMetadata({
+  title: '特定商取引法に基づく表記',
+  description:
+    'ベストショット抽出（Proプラン）の特定商取引法に基づく表記。販売事業者・販売価格（月額500円・税込）・支払方法・解約と返金の取扱いを記載しています。',
+  path: '/tokushoho',
+});
 
 export default function TokushohoPage() {
   return (

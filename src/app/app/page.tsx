@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import ExtractorTool from '@/components/ExtractorTool';
@@ -6,8 +7,17 @@ import { getUsageStatus, getViewer, type Viewer } from '@/lib/auth';
 import { ANON_USAGE_COOKIE } from '@/lib/anon-usage';
 import { anonUsageSnapshot } from '@/lib/usage';
 import { FREE_DAILY_LIMIT, isDemoMode, isStripeConfigured } from '@/lib/env';
+import { pageMetadata } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = pageMetadata({
+  title: '動画から顔写真を抽出するツール（無料・ログイン不要）｜ベストショット抽出',
+  description:
+    '動画を選ぶだけで、正面・ピント・顔の大きさでベストショットを自動抽出。無料プランはログイン不要で1日3本・5分以内、Proプランは本数無制限＋AI超解像。動画はアップロードされず端末内で処理します。',
+  path: '/app',
+  absoluteTitle: true,
+});
 
 type Search = {
   plan?: string;

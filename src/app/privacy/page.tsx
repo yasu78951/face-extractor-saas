@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { legal } from '@/lib/legal';
+import { pageMetadata } from '@/lib/site';
 
-export const metadata: Metadata = {
-  title: 'プライバシーポリシー | ベストショット抽出',
-  description: 'ベストショット抽出における個人情報および動画・画像の取扱いについて。',
-};
+export const metadata: Metadata = pageMetadata({
+  title: 'プライバシーポリシー',
+  description:
+    'ベストショット抽出のプライバシーポリシー。動画・画像は端末内で処理されサーバーへ送信されないこと、取得する情報と利用目的、第三者提供・委託先を説明します。',
+  path: '/privacy',
+});
 
 export default function PrivacyPage() {
   return (

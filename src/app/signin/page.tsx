@@ -1,10 +1,18 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getViewer, type Viewer } from '@/lib/auth';
 import { isDemoMode, isSupabaseConfigured } from '@/lib/env';
 import { safeNextPath } from '@/lib/next-path';
+import { pageMetadata } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = pageMetadata({
+  title: 'ログイン / 新規登録',
+  description: 'ベストショット抽出のログイン・新規登録ページです。',
+  noindex: true,
+});
 
 type Search = {
   sent?: string;

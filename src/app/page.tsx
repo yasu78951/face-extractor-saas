@@ -1,9 +1,92 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { HERO_FACES } from '@/components/HeroFaces';
 import { getViewer, type Viewer } from '@/lib/auth';
 import { isDemoMode, isStripeConfigured, PRO_PRICE_JPY } from '@/lib/env';
+import { FAQ_ITEMS } from '@/lib/faq';
+import { SITE_DESCRIPTION, SITE_NAME, SITE_OG_IMAGE, SITE_TITLE, SITE_URL } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  // トップは検索意図に合わせた文言をそのまま出したいので、タイトルのテンプレートは使わない
+  title: { absolute: SITE_TITLE },
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: '/' },
+  openGraph: {
+    type: 'website',
+    locale: 'ja_JP',
+    siteName: SITE_NAME,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: '/',
+    images: [SITE_OG_IMAGE],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [SITE_OG_IMAGE.url],
+  },
+};
+
+/** 構造化データ（JSON-LD）を埋め込む。`<` はエスケープして壊れないようにする。 */
+function JsonLd({ data }: { data: Record<string, unknown> }) {
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, '\\u003c') }}
+    />
+  );
+}
+
+const WEB_APPLICATION_JSON_LD: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: SITE_NAME,
+  url: SITE_URL,
+  description: SITE_DESCRIPTION,
+  applicationCategory: 'MultimediaApplication',
+  applicationSubCategory: '動画からの静止画切り出し・顔写真抽出',
+  operatingSystem: 'iOS, Windows, macOS, Android',
+  browserRequirements: 'Safari / Chrome / Edge / Firefox の最新版（AI超解像はWebGLが動作する端末）',
+  inLanguage: 'ja-JP',
+  isAccessibleForFree: true,
+  offers: [
+    {
+      '@type': 'Offer',
+      name: '無料プラン',
+      price: '0',
+      priceCurrency: 'JPY',
+      description: 'ログイン不要で1日3本まで（動画は5分以内）',
+      availability: 'https://schema.org/InStock',
+    },
+    {
+      '@type': 'Offer',
+      name: 'Proプラン',
+      price: String(PRO_PRICE_JPY),
+      priceCurrency: 'JPY',
+      description: '本数・動画の長さ無制限、端末内AI超解像つき（月額・税込）',
+      availability: 'https://schema.org/InStock',
+    },
+  ],
+  featureList: [
+    '動画から「正面・ピント・顔の大きさ」で自動採点し、ベストショットを抽出',
+    '解析・切り出し・高画質化は端末内で完結（動画をアップロードしない）',
+    '端末内AI超解像（ESRGAN-slim）による高画質化',
+    '512 / 768 / 1024pxでの書き出し・一括保存',
+  ],
+};
+
+const FAQ_JSON_LD: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: FAQ_ITEMS.map((item) => ({
+    '@type': 'Question',
+    name: item.question,
+    acceptedAnswer: { '@type': 'Answer', text: item.answer },
+  })),
+};
 
 export default async function LandingPage() {
   let viewer: Viewer | null = null;
@@ -18,7 +101,10 @@ export default async function LandingPage() {
   const upscaleLabel = viewer?.isPro ? 'Proプラン利用中（ツールを開く）' : '✨ 月額500円・ProプランでAI超解像を使う';
 
   return (
-    <main className="landing">
+    <>
+      <JsonLd data={WEB_APPLICATION_JSON_LD} />
+      <JsonLd data={FAQ_JSON_LD} />
+      <main className="landing">
       <div className="container">
         <section className="hero">
           <div>
@@ -392,38 +478,12 @@ export default async function LandingPage() {
             <h2>よくある質問</h2>
           </div>
           <div className="faq">
-            <details>
-              <summary>動画はサーバーに送られますか？</summary>
-              <div className="answer">
-                いいえ。動画の解析・切り出し・高画質化はすべてお使いのブラウザ内で実行され、動画ファイルがアップロードされることはありません。
-                サーバーとやり取りするのは、ログイン情報と「何本使ったか」という回数の記録だけです。
-              </div>
-            </details>
-            <details>
-              <summary>無料プランの「1日3本」はいつリセットされますか？</summary>
-              <div className="answer">
-                日本時間（Asia/Tokyo）の0時にリセットされます。ログインなしでお使いの場合はお使いのブラウザ（Cookie）ごとにカウントし、
-                ログインするとアカウントに紐づくので、端末を変えても同じアカウントなら回数は共有されます。
-              </div>
-            </details>
-            <details>
-              <summary>AI超解像はProプランだけですか？</summary>
-              <div className="answer">
-                はい。端末内AI超解像（ESRGAN-slim）はProプランの機能です。無料プランでは「標準」「強」の高画質補正をご利用いただけます。AI超解像は初回のみ約2.5MBのモデルを読み込みます（外部APIは使いません）。
-              </div>
-            </details>
-            <details>
-              <summary>iPhoneでも使えますか？</summary>
-              <div className="answer">
-                はい。Safariで開いて動画を選ぶだけで使えます。解析中は画面を閉じたりロックしたりすると停止しますので、画面を開いたままお待ちください。保存は共有シートの「画像を保存」が確実です。
-              </div>
-            </details>
-            <details>
-              <summary>解約はどうすればいいですか？</summary>
-              <div className="answer">
-                アカウントメニューの「プラン管理・カード変更・解約」からStripeのカスタマーポータルを開き、解約できます。解約後も次回更新日まではProの機能をご利用いただけます。
-              </div>
-            </details>
+            {FAQ_ITEMS.map((item) => (
+              <details key={item.question}>
+                <summary>{item.question}</summary>
+                <div className="answer">{item.answer}</div>
+              </details>
+            ))}
           </div>
         </section>
 
@@ -437,6 +497,7 @@ export default async function LandingPage() {
           </Link>
         </section>
       </div>
-    </main>
+      </main>
+    </>
   );
 }

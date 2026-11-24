@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { legal } from '@/lib/legal';
+import { pageMetadata } from '@/lib/site';
 
-export const metadata: Metadata = {
-  title: '利用規約 | ベストショット抽出',
-  description: 'ベストショット抽出（動画からの顔写真自動抽出ツール）の利用規約です。',
-};
+export const metadata: Metadata = pageMetadata({
+  title: '利用規約',
+  description:
+    'ベストショット抽出（動画から顔写真を自動抽出するツール）の利用規約。サービスの利用条件、禁止事項、有料プランと解約、免責事項を定めています。',
+  path: '/terms',
+});
 
 export default function TermsPage() {
   return (
