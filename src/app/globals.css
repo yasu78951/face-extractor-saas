@@ -372,22 +372,15 @@ img {
 }
 .hero-shot {
   border-radius: 12px;
-  background: linear-gradient(160deg, #1c2233, #303c5c);
+  background:
+    radial-gradient(90% 75% at 50% -15%, rgba(92, 124, 250, 0.5), transparent 70%),
+    linear-gradient(160deg, #171c2b, #232d47);
   aspect-ratio: 4 / 3.2;
   position: relative;
   overflow: hidden;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   padding: 14px;
-}
-.hero-shot::before {
-  content: "";
-  position: absolute;
-  inset: 12% 10% auto;
-  height: 62%;
-  border-radius: 12px;
-  background: radial-gradient(120% 100% at 30% 20%, #5c7cfa 0%, #2b3654 70%);
-  opacity: 0.9;
 }
 .hero-shot-grid {
   position: relative;
@@ -397,21 +390,77 @@ img {
   width: 100%;
 }
 .hero-thumb {
+  position: relative;
   aspect-ratio: 1;
   border-radius: 9px;
-  background: linear-gradient(150deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.06));
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-end;
-  padding: 5px;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 700;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: #cfd9f5;
+  box-shadow: 0 3px 10px rgba(4, 8, 20, 0.28);
+}
+.hero-thumb .hero-face {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.hero-thumb.soft-1 .hero-face {
+  filter: blur(0.5px) saturate(0.94) brightness(0.98);
+}
+.hero-thumb.soft-2 .hero-face {
+  filter: blur(1px) saturate(0.88) brightness(0.96);
+}
+.hero-thumb.soft-3 .hero-face {
+  filter: blur(1.5px) saturate(0.82) brightness(0.94);
 }
 .hero-thumb.best {
   border-color: #f7c948;
-  box-shadow: 0 0 0 2px rgba(247, 201, 72, 0.35);
+  box-shadow:
+    0 0 0 2px rgba(247, 201, 72, 0.4),
+    0 4px 14px rgba(4, 8, 20, 0.3);
+}
+.thumb-rank {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(13, 18, 32, 0.68);
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 800;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.hero-thumb.best .thumb-rank {
+  background: linear-gradient(135deg, #ffd75e, #eaa80b);
+  color: #3a2a00;
+}
+.thumb-score {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #16203a;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.6;
+  box-shadow: 0 1px 4px rgba(8, 12, 24, 0.25);
+  white-space: nowrap;
+}
+.thumb-score i {
+  font-style: normal;
+  font-size: 8.5px;
+  margin-left: 1px;
+}
+.hero-thumb.best .thumb-score {
+  background: #fff;
+  color: #a57600;
+  box-shadow:
+    0 0 0 1.5px #f7c948,
+    0 1px 5px rgba(8, 12, 24, 0.2);
 }
 .hero-card-caption {
   display: flex;
@@ -423,6 +472,273 @@ img {
 }
 .hero-card-caption b {
   color: var(--ink);
+}
+
+/* ---------------- AI超解像 before / after ---------------- */
+.upscale {
+  margin-top: 72px;
+}
+.upscale .section-head .eyebrow {
+  margin-bottom: 12px;
+}
+.section-head h2 .accent {
+  background: linear-gradient(120deg, var(--brand), #6741d9);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.upscale-lead {
+  max-width: 42em;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ba-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 64px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  max-width: 860px;
+  margin: 6px auto 0;
+}
+.ba-card {
+  margin: 0;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 12px;
+  box-shadow: var(--shadow-sm);
+}
+.ba-card.before {
+  background: linear-gradient(#fbfbfd, #f2f3f8);
+}
+.ba-card.after {
+  border-color: #c9b6ff;
+  background: linear-gradient(#ffffff, #fbf9ff);
+  box-shadow:
+    0 0 0 3px rgba(124, 92, 255, 0.1),
+    0 18px 46px rgba(103, 65, 217, 0.26);
+}
+.ba-art {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #e8ecf7;
+  isolation: isolate;
+}
+.ba-art .hero-face {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.before .ba-art .hero-face {
+  filter: blur(2.6px) saturate(0.6) contrast(0.86) brightness(0.9);
+  transform: scale(1.07);
+}
+.before .ba-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(60% 60% at 50% 45%, transparent 38%, rgba(20, 26, 41, 0.26));
+  pointer-events: none;
+}
+.ba-pixel {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+  background-size: 9px 9px;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+.after .ba-art .hero-face {
+  filter: saturate(1.18) contrast(1.1) brightness(1.05);
+}
+.ba-glow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(55% 38% at 50% 8%, rgba(255, 255, 255, 0.5), transparent 72%),
+    radial-gradient(80% 70% at 50% 110%, rgba(124, 92, 255, 0.16), transparent 70%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+.ba-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 34%,
+    rgba(255, 255, 255, 0.5) 47%,
+    rgba(255, 255, 255, 0.15) 54%,
+    transparent 64%
+  );
+  transform: translateX(-130%);
+  animation: baShine 3.6s ease-in-out infinite;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+@keyframes baShine {
+  0%,
+  52% {
+    transform: translateX(-130%);
+  }
+  88%,
+  100% {
+    transform: translateX(130%);
+  }
+}
+.ba-star {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, #fff6cf, #ffc93c 45%, #f59f00);
+  clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
+  filter: drop-shadow(0 0 7px rgba(255, 201, 60, 0.9));
+  animation: baTwinkle 2.6s ease-in-out infinite;
+  pointer-events: none;
+}
+.ba-star.s1 {
+  top: 7%;
+  left: 6%;
+  width: 24px;
+  height: 24px;
+}
+.ba-star.s2 {
+  top: 17%;
+  right: 8%;
+  width: 15px;
+  height: 15px;
+  animation-delay: 0.7s;
+}
+.ba-star.s3 {
+  bottom: 25%;
+  left: 9%;
+  width: 13px;
+  height: 13px;
+  animation-delay: 1.3s;
+}
+.ba-star.s4 {
+  bottom: 12%;
+  right: 11%;
+  width: 18px;
+  height: 18px;
+  animation-delay: 1.9s;
+}
+@keyframes baTwinkle {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+.ba-badge {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #6741d9, #3b5bdb);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 12px rgba(59, 91, 219, 0.4);
+  white-space: nowrap;
+}
+.ba-caption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 2px 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.ba-tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eef0f6;
+  color: #6b7488;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.ba-tag.pro {
+  background: linear-gradient(135deg, #e8e0ff, #dbe4ff);
+  color: #5b3fc4;
+}
+.ba-comment {
+  margin: 6px 2px 2px;
+  font-size: 12.5px;
+  color: #8a90a3;
+}
+.ba-comment.strong {
+  color: var(--brand-dark);
+  font-weight: 800;
+}
+.ba-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.ba-arrow-star {
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(135deg, #fff6cf, #ffc93c 45%, #f59f00);
+  clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
+  filter: drop-shadow(0 0 6px rgba(255, 201, 60, 0.9));
+  animation: baTwinkle 2.6s ease-in-out infinite;
+}
+.ba-arrow-head {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--brand);
+}
+.ba-note {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--faint);
+}
+.ba-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+.ba-highlights span {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #eef1fb;
+  color: var(--brand-dark);
+  font-size: 12px;
+  font-weight: 700;
+}
+.ba-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+}
+.btn-lg {
+  font-size: 15.5px;
+  padding: 14px 26px;
+  border-radius: 12px;
+}
+.ba-cta-note {
+  font-size: 11.5px;
+  color: var(--faint);
 }
 
 /* feature row */
@@ -992,21 +1308,64 @@ body:has(.tool-route) .site-header {
     font-size: 15px;
   }
   .site-header-inner {
-    padding: 6px 14px;
-    gap: 10px;
+    padding: 6px 12px;
+    gap: 8px;
     min-height: 56px;
   }
   .brand {
-    font-size: 15px;
-    gap: 7px;
+    font-size: 14.5px;
+    gap: 6px;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .brand > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .brand-mark {
-    width: 27px;
-    height: 27px;
-    font-size: 14px;
+    width: 26px;
+    height: 26px;
+    font-size: 13px;
+    flex: none;
   }
   .header-right {
     gap: 6px;
+    min-width: 0;
+    flex: none;
+  }
+  .header-right .btn-sm {
+    font-size: 12.5px;
+    padding: 7px 10px;
+    border-radius: 8px;
+  }
+  .header-signin .signin-suffix {
+    display: none;
+  }
+  .ba-wrap {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    max-width: 380px;
+  }
+  .ba-arrow {
+    transform: rotate(90deg);
+    gap: 0;
+    height: 34px;
+    justify-content: center;
+  }
+  .ba-arrow-star {
+    display: none;
+  }
+  .ba-arrow-head {
+    font-size: 24px;
+  }
+  .upscale {
+    margin-top: 52px;
+  }
+  .btn-lg {
+    width: 100%;
+    font-size: 14.5px;
+    padding: 13px 16px;
   }
   .plan-pill {
     display: none;
@@ -1077,5 +1436,27 @@ body:has(.tool-route) .site-header {
   .site-footer-inner {
     flex-direction: column;
     gap: 14px;
+  }
+}
+
+/* 極小画面（iPhone SE 第1世代など）ではヘッダーの副CTAを畳む */
+@media (max-width: 360px) {
+  .header-try {
+    display: none;
+  }
+  .brand {
+    font-size: 14px;
+  }
+}
+
+/* アニメーションを減らす設定の環境では装飾の動きを止める */
+@media (prefers-reduced-motion: reduce) {
+  .ba-shine,
+  .ba-star,
+  .ba-arrow-star {
+    animation: none;
+  }
+  .ba-shine {
+    opacity: 0;
   }
 }

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { FaceSvg, HERO_FACES } from '@/components/HeroFaces';
 import { getViewer, type Viewer } from '@/lib/auth';
 import { isDemoMode, isStripeConfigured, PRO_PRICE_JPY } from '@/lib/env';
 
@@ -13,6 +14,8 @@ export default async function LandingPage() {
   }
   const demo = isDemoMode();
   const stripeReady = isStripeConfigured();
+  const upscaleHref = viewer?.isPro ? '/app' : viewer ? '/#pricing' : '/signin?next=%2F%23pricing';
+  const upscaleLabel = viewer?.isPro ? 'Proプラン利用中（ツールを開く）' : '✨ 月額500円・ProプランでAI超解像を使う';
 
   return (
     <main className="landing">
@@ -65,12 +68,19 @@ export default async function LandingPage() {
           <div className="hero-card" aria-hidden="true">
             <div className="hero-shot">
               <div className="hero-shot-grid">
-                <div className="hero-thumb best">★ BEST</div>
-                <div className="hero-thumb">#2</div>
-                <div className="hero-thumb">#3</div>
-                <div className="hero-thumb">#4</div>
-                <div className="hero-thumb">#5</div>
-                <div className="hero-thumb">#6</div>
+                {HERO_FACES.map((face, i) => (
+                  <div
+                    key={face.rank}
+                    className={`hero-thumb${i === 0 ? ' best' : ''}${i >= 3 ? ` soft-${i - 2}` : ''}`}
+                  >
+                    <FaceSvg variant={i} uid="hero" />
+                    <span className="thumb-rank">{face.rank}</span>
+                    <span className="thumb-score">
+                      {face.score}
+                      <i>点</i>
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
             <div className="hero-card-caption">
@@ -106,6 +116,71 @@ export default async function LandingPage() {
               512 / 768 / 1024px で書き出し、iPhoneは共有シートから「画像を保存」。
               1枚ずつでも、まとめてでも保存できます。
             </p>
+          </div>
+        </section>
+
+        <section className="section upscale" id="upscale">
+          <div className="section-head">
+            <span className="eyebrow">✨ ProのAI超解像</span>
+            <h2>
+              同じ1枚が、<span className="accent">ここまで別次元</span>に。
+            </h2>
+            <p className="upscale-lead">
+              遠目に小さく写った顔も、輪郭・肌・瞳のハイライトまで。
+              Proプランの端末内AI超解像（ESRGAN-slim）なら、その1枚が「使える顔写真」になります。
+            </p>
+          </div>
+
+          <div className="ba-wrap">
+            <figure className="ba-card before">
+              <div className="ba-art">
+                <FaceSvg variant={0} uid="ba-before" />
+                <span className="ba-pixel" />
+              </div>
+              <figcaption className="ba-caption">
+                <span className="ba-tag">Before</span>
+                そのまま切り出して拡大（無料プラン）
+              </figcaption>
+              <p className="ba-comment">遠目の顔だと、ぼやけて・のっぺり…</p>
+            </figure>
+
+            <div className="ba-arrow" aria-hidden="true">
+              <span className="ba-arrow-star" />
+              <span className="ba-arrow-head">→</span>
+            </div>
+
+            <figure className="ba-card after">
+              <div className="ba-art">
+                <FaceSvg variant={0} uid="ba-after" />
+                <span className="ba-glow" aria-hidden="true" />
+                <span className="ba-shine" aria-hidden="true" />
+                <span className="ba-star s1" aria-hidden="true" />
+                <span className="ba-star s2" aria-hidden="true" />
+                <span className="ba-star s3" aria-hidden="true" />
+                <span className="ba-star s4" aria-hidden="true" />
+                <span className="ba-badge">✨ AI超解像 ON</span>
+              </div>
+              <figcaption className="ba-caption">
+                <span className="ba-tag pro">After</span>
+                Proプラン：AI超解像 ON
+              </figcaption>
+              <p className="ba-comment strong">くっきり・ツヤツヤ・生き生き！</p>
+            </figure>
+          </div>
+
+          <p className="ba-note">※仕上がりイメージです。元動画の解像度や顔の大きさによって効果は変わります。</p>
+
+          <div className="ba-highlights">
+            <span>輪郭までシャープ</span>
+            <span>肌の質感アップ</span>
+            <span>瞳にハイライト</span>
+          </div>
+
+          <div className="ba-cta">
+            <Link href={upscaleHref} className="btn btn-primary btn-lg">
+              {upscaleLabel}
+            </Link>
+            <span className="ba-cta-note">Proなら本数・動画の長さ無制限／カスタマーポータルからいつでも解約OK</span>
           </div>
         </section>
 
