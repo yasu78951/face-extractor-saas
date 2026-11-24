@@ -38,7 +38,7 @@ export const legalEn = {
   address: env('NEXT_PUBLIC_OPERATOR_ADDRESS_EN', ''),
   phone: env('NEXT_PUBLIC_OPERATOR_PHONE_EN', ''),
   email: legal.email,
-  priceLabel: env('NEXT_PUBLIC_PRICE_LABEL_EN', '¥500 per month (tax included)'),
+  priceLabel: env('NEXT_PUBLIC_PRICE_LABEL_EN', '$4.99 per month'),
   effectiveDate: env('NEXT_PUBLIC_LEGAL_EFFECTIVE_DATE_EN', 'November 24, 2026'),
   disclosureOnRequest: 'Disclosed without delay upon request.',
 };

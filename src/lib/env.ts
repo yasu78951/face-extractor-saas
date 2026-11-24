@@ -8,7 +8,10 @@ export const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
 export const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
 
 export const stripeSecretKey = process.env.STRIPE_SECRET_KEY ?? '';
+/** 日本語表示用のPrice（¥500/月） */
 export const stripePriceId = process.env.STRIPE_PRICE_ID ?? '';
+/** 英語表示用のPrice（$4.99/月）。未設定なら日本語用Priceへフォールバックする */
+export const stripePriceIdUsd = process.env.STRIPE_PRICE_ID_USD ?? '';
 export const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET ?? '';
 
 /** Stripeのカスタマーポータル設定ID（任意。未設定ならダッシュボードの既定設定） */
@@ -52,6 +55,13 @@ export const plans = {
 export const FREE_DAILY_LIMIT = plans.free.dailyLimit;
 export const FREE_MAX_SECONDS = plans.free.maxSeconds;
 export const PRO_PRICE_JPY = plans.pro.price;
+/** 英語表示用の月額（USD）。Stripeの `STRIPE_PRICE_ID_USD` と同じ金額に保つこと */
+export const PRO_PRICE_USD = 4.99;
+
+/** 表示言語に対応するStripeのPrice ID（英語でもUSD未設定ならJPYへフォールバック） */
+export function stripePriceIdFor(lang: 'ja' | 'en'): string {
+  return lang === 'en' && stripePriceIdUsd ? stripePriceIdUsd : stripePriceId;
+}
 
 export function isSupabaseConfigured(): boolean {
   return Boolean(supabaseUrl && supabaseAnonKey);

@@ -67,6 +67,9 @@ npm run dev                  # http://localhost:3000
    - 名前: `ベストショット抽出 Pro`
    - 価格: **¥500 JPY / 月（継続）**
    - 作成後の **Price ID（`price_...`）** を `STRIPE_PRICE_ID` に入れる。
+   - 英語表示用に **$4.99 USD / 月（継続）** の価格も作り、その Price ID を `STRIPE_PRICE_ID_USD` に入れる。
+     - 英語表示（`en`）のときは `STRIPE_PRICE_ID_USD`、日本語表示（`ja`）のときは `STRIPE_PRICE_ID` で決済します。
+     - `STRIPE_PRICE_ID_USD` が未設定のときは、英語表示でも `STRIPE_PRICE_ID`（¥500）にフォールバックします。
 2. **開発者 → APIキー** の「シークレットキー」を `STRIPE_SECRET_KEY` に入れる。
    - 本番審査前は `sk_test_...` で動作確認できます。
 3. **開発者 → Webhook**

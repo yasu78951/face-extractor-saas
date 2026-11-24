@@ -247,7 +247,7 @@ function TermsEn() {
           Service.
         </li>
         <li>
-          The Pro plan costs ¥500 per month (tax included), paid by credit card through the payment services of Stripe,
+          The Pro plan costs $4.99 per month, paid by credit card through the payment services of Stripe,
           Inc.
         </li>
         <li>

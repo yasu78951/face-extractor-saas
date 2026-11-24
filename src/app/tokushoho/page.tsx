@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: lang === 'en' ? 'Legal Notice (Specified Commercial Transactions Act)' : '特定商取引法に基づく表記',
     description:
       lang === 'en'
-        ? 'Legal notice for Best Shot Extractor (Pro plan) under the Japanese Specified Commercial Transactions Act: seller, price (¥500/month, tax included), payment, cancellation and refunds.'
+        ? 'Legal notice for Best Shot Extractor (Pro plan) under the Japanese Specified Commercial Transactions Act: seller, price ($4.99/month), payment, cancellation and refunds.'
         : 'ベストショット抽出（Proプラン）の特定商取引法に基づく表記。販売事業者・販売価格（月額500円・税込）・支払方法・解約と返金の取扱いを記載しています。',
     path: '/tokushoho',
     lang,
@@ -166,7 +166,7 @@ function TokushohoEn() {
             <td>
               Pro plan {legalEn.priceLabel} (subscription, renews automatically each month)
               <br />
-              Free plan ¥0
+              Free plan $0
             </td>
           </tr>
           <tr>

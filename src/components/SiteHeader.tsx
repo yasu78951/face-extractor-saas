@@ -48,6 +48,7 @@ export function SiteHeader({ viewer, lang = 'ja' }: { viewer: Viewer | null; lan
                   <Link href="/app">{t.nav.toolLink}</Link>
                   {!pro && isStripeConfigured() ? (
                     <form action="/api/stripe/checkout" method="post">
+                      <input type="hidden" name="lang" value={lang} />
                       <button type="submit">{t.nav.upgrade}</button>
                     </form>
                   ) : null}

@@ -141,6 +141,7 @@ export default async function AppPage({ searchParams }: { searchParams: Promise<
             <div className="notice notice-info">
               {t.tool.noticeUpgradeTitle}
               <form action="/api/stripe/checkout" method="post" style={{ display: 'inline', marginLeft: 10 }}>
+                <input type="hidden" name="lang" value={lang} />
                 <button type="submit" className="btn btn-primary btn-sm">
                   {t.tool.noticeUpgradeBtn}
                 </button>

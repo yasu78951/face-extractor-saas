@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { HERO_FACES } from '@/components/HeroFaces';
 import { getViewer, type Viewer } from '@/lib/auth';
-import { isDemoMode, isStripeConfigured, PRO_PRICE_JPY } from '@/lib/env';
+import { isDemoMode, isStripeConfigured, PRO_PRICE_JPY, PRO_PRICE_USD } from '@/lib/env';
 import { ogLocale, withLangPath } from '@/lib/i18n';
 import { getLang } from '@/lib/i18n-server';
 import { messages } from '@/lib/messages';
@@ -80,10 +80,10 @@ function webApplicationJsonLd(lang: 'ja' | 'en'): Record<string, unknown> {
       {
         '@type': 'Offer',
         name: en ? 'Pro plan' : 'Proプラン',
-        price: String(PRO_PRICE_JPY),
-        priceCurrency: 'JPY',
+        price: en ? PRO_PRICE_USD.toFixed(2) : String(PRO_PRICE_JPY),
+        priceCurrency: en ? 'USD' : 'JPY',
         description: en
-          ? 'Unlimited videos and length, with on-device AI upscaling (per month, tax included)'
+          ? 'Unlimited videos and length, with on-device AI upscaling (per month)'
           : '本数・動画の長さ無制限、端末内AI超解像つき（月額・税込）',
         availability: 'https://schema.org/InStock',
       },
@@ -352,7 +352,9 @@ export default async function LandingPage() {
               <span className="price-tag">{tl.pricing.proTag}</span>
               <div className="price-name">{tl.pricing.proName}</div>
               <div className="price-value">
-                ¥{PRO_PRICE_JPY.toLocaleString(lang === 'ja' ? 'ja-JP' : 'en-US')}
+                {lang === 'en'
+                  ? `$${PRO_PRICE_USD.toFixed(2)}`
+                  : `¥${PRO_PRICE_JPY.toLocaleString('ja-JP')}`}
                 <small>{tl.pricing.proPriceNote}</small>
               </div>
               {tl.pricing.proApprox ? (
@@ -372,6 +374,7 @@ export default async function LandingPage() {
                 </Link>
               ) : viewer && isStripeConfigured() ? (
                 <form action="/api/stripe/checkout" method="post">
+                  <input type="hidden" name="lang" value={lang} />
                   <button type="submit" className="btn btn-primary btn-block">
                     {tl.pricing.proStart}
                   </button>

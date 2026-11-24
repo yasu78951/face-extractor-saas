@@ -6,9 +6,9 @@ import {
   isSupabaseAdminConfigured,
   isSupabaseConfigured,
   siteUrlFrom,
-  stripePriceId,
+  stripePriceIdFor,
 } from '@/lib/env';
-import { LANG_COOKIE, normalizeLang } from '@/lib/i18n';
+import { LANG_COOKIE, langFromAcceptLanguage, normalizeLang, type Lang } from '@/lib/i18n';
 import { getStripe } from '@/lib/stripe';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -20,17 +20,33 @@ function back(request: Request, path: string) {
   return NextResponse.redirect(new URL(path, siteUrlFrom(request.url)), 303);
 }
 
-/** 決済画面の言語（Cookie `fe_lang` → `?lang=` → 日本語） */
-async function checkoutLocale(request: Request) {
+/**
+ * 決済に使う表示言語を決める。優先順位は画面と同じ:
+ * `?lang=` → フォームの hidden `lang` → Cookie `fe_lang` → Accept-Language（`ja` を含まなければ英語）
+ */
+async function checkoutLang(request: Request): Promise<Lang> {
   const url = new URL(request.url);
   const fromQuery = normalizeLang(url.searchParams.get('lang'));
-  if (fromQuery) return fromQuery === 'en' ? 'en' : 'ja';
+  if (fromQuery) return fromQuery;
+
+  if (request.method === 'POST') {
+    try {
+      const form = await request.clone().formData();
+      const fromForm = normalizeLang(String(form.get('lang') ?? ''));
+      if (fromForm) return fromForm;
+    } catch {
+      // FormData でないリクエストは無視
+    }
+  }
+
   const store = await cookies();
   const fromCookie = normalizeLang(store.get(LANG_COOKIE)?.value);
-  return fromCookie === 'en' ? 'en' : 'ja';
+  if (fromCookie) return fromCookie;
+
+  return langFromAcceptLanguage(request.headers.get('accept-language'));
 }
 
-/** 月額500円のサブスクリプションCheckoutセッションを作成してStripeへ送る */
+/** 表示言語のサブスクリプションPriceでCheckoutセッションを作成してStripeへ送る */
 export async function POST(request: Request) {
   if (!isStripeConfigured() || !isSupabaseConfigured()) {
     return back(request, '/app?checkout=unavailable');
@@ -43,7 +59,10 @@ export async function POST(request: Request) {
   try {
     const stripe = getStripe();
     const base = siteUrlFrom(request.url);
-    const locale = await checkoutLocale(request);
+    const lang = await checkoutLang(request);
+    const locale = lang;
+    // 英語表示はUSD（未設定時はJPYへフォールバック）、日本語表示は従来のJPY
+    const priceId = stripePriceIdFor(lang);
 
     let customerId = viewer.profile.stripe_customer_id;
     if (!customerId) {
@@ -64,14 +83,14 @@ export async function POST(request: Request) {
       mode: 'subscription',
       customer: customerId,
       client_reference_id: viewer.user.id,
-      line_items: [{ price: stripePriceId, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       allow_promotion_codes: true,
       billing_address_collection: 'auto',
       locale,
       subscription_data: {
         metadata: { supabase_user_id: viewer.user.id },
       },
-      metadata: { supabase_user_id: viewer.user.id, plan: 'pro' },
+      metadata: { supabase_user_id: viewer.user.id, plan: 'pro', lang, price_id: priceId },
       success_url: `${base}/app?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${base}/app?checkout=cancel`,
     });

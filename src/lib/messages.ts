@@ -425,7 +425,7 @@ const en: Dict = {
     siteName: 'Best Shot Extractor',
     siteTitle: 'Extract the best face photos from any video | AI upscaling, works on iPhone',
     siteDescription:
-      'A web tool that scores the frames in your video for facing the camera, sharpness and face size, then extracts the best ones as high-quality face photos. Everything runs on your device — your video is never uploaded. Works in iPhone Safari; the free plan covers 3 videos a day, and Pro (¥500/mo) is unlimited with AI upscaling.',
+      'A web tool that scores the frames in your video for facing the camera, sharpness and face size, then extracts the best ones as high-quality face photos. Everything runs on your device — your video is never uploaded. Works in iPhone Safari; the free plan covers 3 videos a day, and Pro ($4.99/mo) is unlimited with AI upscaling.',
     keywords: [
       'extract face from video',
       'best shot picker',
@@ -436,7 +436,7 @@ const en: Dict = {
       'save photo from video iPhone',
     ],
     ogImageAlt: 'Sample face photo finished with AI upscaling',
-    proPriceNote: '¥500 / month (tax included)',
+    proPriceNote: '$4.99 / month',
     language: 'Language',
     demoTool: 'Open the tool in demo mode',
   },
@@ -454,7 +454,7 @@ const en: Dict = {
     accountMenuAria: 'Account menu',
     signedInAs: 'Signed in as',
     toolLink: 'Face extractor',
-    upgrade: 'Upgrade to Pro (¥500/mo)',
+    upgrade: 'Upgrade to Pro ($4.99/mo)',
     manage: 'Manage plan, card, cancel',
     signOut: 'Sign out',
     demoPill: 'Demo mode',
@@ -537,7 +537,7 @@ const en: Dict = {
       note: 'Results are illustrative. The effect depends on the source resolution and the size of the face.',
       highlights: ['Sharper edges', 'More skin detail', 'Catchlights in the eyes'],
       ctaPro: 'Pro plan active — open the tool',
-      ctaUpgrade: '✨ Get AI upscaling with Pro — ¥500/mo (approx. $3.5 USD)',
+      ctaUpgrade: '✨ Get AI upscaling with Pro — $4.99/mo',
       ctaNote: 'Pro is unlimited in videos and length · cancel anytime from the customer portal',
     },
 
@@ -562,9 +562,9 @@ const en: Dict = {
 
     pricing: {
       title: 'Pricing',
-      lead: 'Start free. Move to Pro at ¥500/month when you need more.',
+      lead: 'Start free. Move to Pro at $4.99/month when you need more.',
       freeName: 'Free',
-      freePrice: '¥0',
+      freePrice: '$0',
       perMonth: '/ mo',
       freeFeatures: [
         '3 videos a day, no sign-up (resets at midnight JST)',
@@ -577,8 +577,8 @@ const en: Dict = {
       freeCtaViewer: 'Open the tool',
       proTag: 'Recommended',
       proName: 'Pro',
-      proPriceNote: '/ mo (tax incl.)',
-      proApprox: 'approx. $3.5 USD',
+      proPriceNote: '/ mo',
+      proApprox: '',
       proFeatures: [
         'Unlimited videos',
         'No video length limit',
@@ -588,11 +588,11 @@ const en: Dict = {
         'Cancel or change card anytime in the customer portal',
       ],
       proActive: 'Pro plan active — open the tool',
-      proStart: 'Start Pro — ¥500/mo',
+      proStart: 'Start Pro — $4.99/mo',
       proStartShort: 'Start Pro',
       proDemo: 'Preview the Pro screen',
       foot:
-        'Prices include tax. Pro renews monthly through Stripe. Cancel anytime from the customer portal; Pro features remain available until the next renewal date.',
+        'Pro renews monthly through Stripe. Cancel anytime from the customer portal; Pro features remain available until the next renewal date.',
       footUnavailable: ' (Stripe is not configured, so payments are currently closed.)',
     },
 
@@ -600,7 +600,7 @@ const en: Dict = {
       title: 'Free vs Pro',
       headFeature: 'Feature',
       headFree: 'Free',
-      headPro: 'Pro (¥500/mo)',
+      headPro: 'Pro ($4.99/mo)',
       rows: [
         { feature: 'Videos per day', free: 'Up to 3', freeTone: 'plain', pro: 'Unlimited', proTone: 'yes' },
         { feature: 'Video length', free: 'Up to 5 min (300 s)', freeTone: 'plain', pro: 'No limit', proTone: 'yes' },
@@ -667,14 +667,14 @@ const en: Dict = {
     lead: 'Videos are processed on your device (nothing is uploaded)',
     leadAnon: ' · no sign-in needed',
     login: 'Sign in',
-    upgrade: 'Unlimited videos + AI upscaling on Pro (¥500/mo)',
+    upgrade: 'Unlimited videos + AI upscaling on Pro ($4.99/mo)',
     back: 'Back to overview',
     noticeSuccess:
       'Your Pro subscription is confirmed. It can take a few seconds to apply — reload the page if nothing changes.',
     noticeCancel: "Checkout was cancelled. You're still on the free plan.",
     noticeUnavailable: 'Stripe is not configured, so payments are unavailable (see SETUP.md).',
     noticeUpgradeTitle:
-      'Pro (¥500/mo) gives you unlimited videos, no length limit and AI upscaling.',
+      'Pro ($4.99/mo) gives you unlimited videos, no length limit and AI upscaling.',
     noticeUpgradeBtn: 'Continue to upgrade',
     noticeDemo: 'Demo mode: only the usage limits and plan display are simulated (Supabase not connected).',
     noticeDemoLink: 'Pricing',
@@ -731,7 +731,7 @@ const en: Dict = {
     levelNone: 'None (original)',
     aiSr: 'AI upscaling',
     aiOn: 'On-device AI (no API)',
-    aiLocked: '🔒 Available on Pro — ¥500/mo',
+    aiLocked: '🔒 Available on Pro — $4.99/mo',
     aiLockedTitle: 'AI upscaling (ESRGAN-slim) is a Pro feature',
     size: 'Output size',
     sizeOptions: [
@@ -745,7 +745,7 @@ const en: Dict = {
     aiAllLocked: '🔒 Upscale all (Pro)',
     saveAll: '💾 Save all as JPG',
     saveFolder: '📁 Save to folder',
-    aiLockBanner: '🔒 AI upscaling (ESRGAN-slim) is available on Pro — ¥500/mo → Upgrade',
+    aiLockBanner: '🔒 AI upscaling (ESRGAN-slim) is available on Pro — $4.99/mo → Upgrade',
     saveHintBold: 'Saving on iPhone:',
     saveHint:
       'Tap a save button, allow the download, and the images go to the Files app. To get them into Photos, tap an image to enlarge it, then “Share” → “Save Image”.',
@@ -774,8 +774,8 @@ const en: Dict = {
     subDemo: ' · demo',
     empty: 'You’ve used all your free analyses today. Pro is unlimited.',
     login: 'Sign in / Sign up',
-    upgradeLogged: 'Upgrade to Pro (¥500/mo)',
-    upgradeAnon: 'Go Pro (¥500/mo) — unlimited + AI upscaling',
+    upgradeLogged: 'Upgrade to Pro ($4.99/mo)',
+    upgradeAnon: 'Go Pro ($4.99/mo) — unlimited + AI upscaling',
     manage: 'Manage / cancel',
   },
 

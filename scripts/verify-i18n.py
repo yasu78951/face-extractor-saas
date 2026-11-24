@@ -132,7 +132,7 @@ def main():
                 ("signin", "/signin?lang=en", ["Sign in / Sign up", "You only need to sign in when you go Pro"]),
                 ("terms", "/terms?lang=en", ["Terms of Service", "1. Application"]),
                 ("privacy", "/privacy?lang=en", ["Privacy Policy", "never sent"]),
-                ("tokushoho", "/tokushoho?lang=en", ["Legal Notice", "Yasufumi Onishi", "¥500 per month"]),
+                ("tokushoho", "/tokushoho?lang=en", ["Legal Notice", "Yasufumi Onishi", "$4.99 per month"]),
             ]
             for slug, path, texts in EN_PAGES:
                 page.goto(BASE + path, wait_until="load")
@@ -148,12 +148,18 @@ def main():
                 page.screenshot(path=shot, full_page=slug in ("landing", "app"))
                 results["shots"].append(shot)
 
-            # 英語トップの価格表記（海外向け）
+            # 英語トップの価格表記（海外向けはUSD $4.99/月で統一）
             page.goto(BASE + "/?lang=en", wait_until="load")
             page.wait_for_timeout(400)
             body = page.inner_text("body")
-            check("EN 価格に $ の参考表記", "approx. $3.5 USD" in body)
+            check("EN 価格に $4.99 表記", "$4.99" in body)
             check("EN 価格に / mo 表記", "/ mo" in body)
+            check("EN に代理店価格（¥500 / $3.5）が残っていない",
+                  "¥500" not in body and "$3.5" not in body)
+            page.goto(BASE + "/app?lang=en", wait_until="load")
+            page.wait_for_timeout(400)
+            app_body = page.inner_text("body")
+            check("EN /app の Pro 文言が $4.99", "$4.99" in app_body and "¥500" not in app_body)
             # hreflang / canonical
             alt = page.eval_on_selector_all(
                 "link[rel='alternate']",
@@ -235,6 +241,32 @@ def main():
             check("iPhone ヘッダーの JP/EN が1行に収まる",
                   m.locator(".site-header-inner").bounding_box()["height"] <= 70,
                   str(m.locator(".site-header-inner").bounding_box()))
+            # Before/After 比較セクションの $4.99/mo ボタンが390px幅ではみ出さない
+            m.goto(BASE + "/?lang=en#upscale", wait_until="load")
+            m.wait_for_timeout(500)
+            cta = m.locator(".ba-cta a.btn")
+            cta.scroll_into_view_if_needed()
+            m.wait_for_timeout(300)
+            cta_text = cta.inner_text()
+            fits = m.evaluate(
+                """() => {
+                  const el = document.querySelector('.ba-cta a.btn');
+                  const r = el.getBoundingClientRect();
+                  const card = el.parentElement.getBoundingClientRect();
+                  return {
+                    scrollWidth: el.scrollWidth, clientWidth: el.clientWidth,
+                    left: r.left, right: r.right, cardLeft: card.left, cardRight: card.right,
+                  };
+                }"""
+            )
+            check("iPhone EN 比較セクションのボタン文言が $4.99", "$4.99" in cta_text, cta_text)
+            check("iPhone EN 比較セクションのボタンがはみ出さない",
+                  fits["scrollWidth"] <= fits["clientWidth"] + 1
+                  and fits["right"] <= 390 + 1 and fits["left"] >= -1
+                  and fits["left"] >= fits["cardLeft"] - 1 and fits["right"] <= fits["cardRight"] + 1,
+                  json.dumps(fits))
+            m.screenshot(path=os.path.join(SHOTS, "iphone-en-upscale.png"))
+            results["shots"].append(os.path.join(SHOTS, "iphone-en-upscale.png"))
             ctx_m.close()
 
             # ---- 5. 日本語ページの回帰（?lang=ja） ----
@@ -269,8 +301,9 @@ def main():
                 check("EN エンジン: AIモデルの準備完了が英語", "AI model ready" in status, status)
             except Exception as e:
                 check("EN エンジン: AIモデルの準備完了が英語", False, str(e)[:160])
-            check("EN ツール: AI超解像ロック文言が英語",
-                  "Available on Pro" in page.locator("#aiSrLabel").inner_text(),
+            check("EN ツール: AI超解像ロック文言が英語・$4.99",
+                  "Available on Pro" in page.locator("#aiSrLabel").inner_text()
+                  and "$4.99" in page.locator("#aiSrLabel").inner_text(),
                   page.locator("#aiSrLabel").inner_text())
             check("EN ツール: ステップ見出しが英語",
                   "Analysis settings" in page.inner_text("body"))

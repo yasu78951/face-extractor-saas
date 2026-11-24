@@ -24,7 +24,7 @@ const gate = () => window.__FE_GATE || { isPro: false, remaining: null, upgradeU
 const isPro = () => !!gate().isPro;
 const isAnonymous = () => !!gate().anonymous;
 const upgradeHref = () => gate().upgradeUrl || '/#pricing';
-const upgradeLink = (label = T('月額500円のProプランを見る', 'View the Pro plan (¥500/mo)')) => `<a class="upgrade-link" href="${upgradeHref()}">${label} →</a>`;
+const upgradeLink = (label = T('月額500円のProプランを見る', 'View the Pro plan ($4.99/mo)')) => `<a class="upgrade-link" href="${upgradeHref()}">${label} →</a>`;
 
 /* 未ログイン利用の補助記録（サーバーの署名Cookieが正。こちらは表示同期用） */
 const USAGE_STORAGE_KEY = 'fe_usage';
@@ -90,11 +90,11 @@ async function requestStart(duration) {
             'The free plan allows 3 videos a day (resets at midnight JST).');
       const cta = anon
         ? T('ログインしてProプラン（月額500円）にすると、本数無制限・時間制限なし・AI超解像が使えます。',
-            'Sign in and go Pro (¥500/mo) for unlimited videos, no length limit and AI upscaling.')
+            'Sign in and go Pro ($4.99/mo) for unlimited videos, no length limit and AI upscaling.')
         : T('本数を気にせず使うならProプラン（月額500円）がおすすめです。',
-            'Go Pro (¥500/mo) to stop counting videos.');
+            'Go Pro ($4.99/mo) to stop counting videos.');
       showLimit(T('本日の無料回数（3回）を使い切りました', 'You have used all 3 free analyses for today'),
-        `${lead}${cta} ${upgradeLink(anon ? T('ログインしてProプランを見る', 'Sign in and see Pro') : T('月額500円のProプランを見る', 'View the Pro plan (¥500/mo)'))}`);
+        `${lead}${cta} ${upgradeLink(anon ? T('ログインしてProプランを見る', 'Sign in and see Pro') : T('月額500円のProプランを見る', 'View the Pro plan ($4.99/mo)'))}`);
     } else if (data && data.reason === 'duration_limit') {
       showLimit(T('無料プランは5分（300秒）までの動画に対応しています', 'The free plan covers videos up to 5 minutes (300 s)'),
         T(`5分を超える動画は ${upgradeLink('Proプランなら時間制限なし')}。`,
@@ -1528,7 +1528,7 @@ function applyPlatformUi() {
   } else if (!isPro()) {
     els.aiSrChk.disabled = true;
     els.aiSrChk.checked = false;
-    els.aiSrLabel.textContent = T('🔒 月額500円のProプランで利用可能', '🔒 Available on Pro — ¥500/mo');
+    els.aiSrLabel.textContent = T('🔒 月額500円のProプランで利用可能', '🔒 Available on Pro — $4.99/mo');
     els.aiSrLabel.title = T('AI超解像（ESRGAN-slim）はProプランの機能です。無料プランでは標準・強の補正が使えます。',
       'AI upscaling (ESRGAN-slim) is a Pro feature. The free plan includes Standard and Strong enhancement.');
     els.aiSrLabel.classList.add('locked');
