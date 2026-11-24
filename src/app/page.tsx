@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { FaceSvg, HERO_FACES } from '@/components/HeroFaces';
+import { HERO_FACES } from '@/components/HeroFaces';
 import { getViewer, type Viewer } from '@/lib/auth';
 import { isDemoMode, isStripeConfigured, PRO_PRICE_JPY } from '@/lib/env';
 
@@ -71,9 +71,17 @@ export default async function LandingPage() {
                 {HERO_FACES.map((face, i) => (
                   <div
                     key={face.rank}
-                    className={`hero-thumb${i === 0 ? ' best' : ''}${i >= 3 ? ` soft-${i - 2}` : ''}`}
+                    className={`hero-thumb${face.tone === 0 ? ' best' : ` tone-${face.tone}`}`}
                   >
-                    <FaceSvg variant={i} uid="hero" />
+                    <img
+                      src={face.src}
+                      alt={face.alt}
+                      width={820}
+                      height={820}
+                      loading={i === 0 ? 'eager' : 'lazy'}
+                      fetchPriority={i === 0 ? 'high' : 'low'}
+                      decoding="async"
+                    />
                     <span className="thumb-rank">{face.rank}</span>
                     <span className="thumb-score">
                       {face.score}
@@ -134,7 +142,14 @@ export default async function LandingPage() {
           <div className="ba-wrap">
             <figure className="ba-card before">
               <div className="ba-art">
-                <FaceSvg variant={0} uid="ba-before" />
+                <img
+                  src="/images/sample-best-before.jpg"
+                  alt="遠目の顔をそのまま切り出して拡大した、ぼやけて粗い画像"
+                  width={820}
+                  height={820}
+                  loading="lazy"
+                  decoding="async"
+                />
                 <span className="ba-pixel" />
               </div>
               <figcaption className="ba-caption">
@@ -151,7 +166,14 @@ export default async function LandingPage() {
 
             <figure className="ba-card after">
               <div className="ba-art">
-                <FaceSvg variant={0} uid="ba-after" />
+                <img
+                  src="/images/sample-best.jpg"
+                  alt="同じ顔写真をAI超解像でくっきり高精細に仕上げた画像"
+                  width={820}
+                  height={820}
+                  loading="lazy"
+                  decoding="async"
+                />
                 <span className="ba-glow" aria-hidden="true" />
                 <span className="ba-shine" aria-hidden="true" />
                 <span className="ba-star s1" aria-hidden="true" />
