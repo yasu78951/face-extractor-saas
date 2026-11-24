@@ -13,3 +13,4 @@ screenshots/
 verify-report.json
 verify-anon-report.json
 verify-auth-report.json
+verify-i18n-report.json

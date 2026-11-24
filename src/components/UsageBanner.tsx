@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import type { Lang } from '@/lib/i18n';
+import { messages } from '@/lib/messages';
 
 type Props = {
   plan: 'free' | 'pro';
@@ -13,6 +15,8 @@ type Props = {
   /** ログイン済みか（未ログインは「ログイン不要」表示＋ログイン導線を出す） */
   loggedIn?: boolean;
   loginHref?: string;
+  /** 表示言語 */
+  lang?: Lang;
 };
 
 /** 未ログイン利用の補助記録（サーバーの署名Cookieが正で、こちらは表示同期用） */
@@ -60,6 +64,7 @@ export default function UsageBanner({
   demo,
   loggedIn = false,
   loginHref = '/signin',
+  lang = 'ja',
 }: Props) {
   const [state, setState] = useState<{ plan: 'free' | 'pro'; remaining: number | null }>({
     plan,
@@ -114,27 +119,24 @@ export default function UsageBanner({
 
   const isPro = state.plan === 'pro';
   const left = state.remaining ?? limit ?? 0;
+  const u = messages[lang].usage;
+  const fill = (text: string) => text.replace('{n}', String(left)).replace('{limit}', String(limit ?? 3));
+  const sub = fill(loggedIn ? u.subFree : u.subFreeAnon) + (demo ? u.subDemo : '');
 
   return (
     <div className={`usage-banner ${isPro ? 'pro' : ''}`} role="status" aria-live="polite">
       <span className="usage-dot" aria-hidden="true" />
       {isPro ? (
         <span>
-          <b>Proプラン（無制限）</b>
-          <span className="usage-sub"> ／ 動画の長さ制限なし・AI超解像が使えます</span>
+          <b>{u.proTitle}</b>
+          <span className="usage-sub">{u.proSub}</span>
         </span>
       ) : (
         <span>
-          本日の残り回数：<b>あと {left} 回</b>
-          <span className="usage-sub">
-            （無料プラン{loggedIn ? '' : '・ログイン不要'}・1日{limit ?? 3}回まで・動画は5分以内
-            {demo ? '・デモ表示' : ''}）
-          </span>
-          {left === 0 ? (
-            <span className="usage-empty">
-              本日の無料回数を使い切りました。Proプランなら本数無制限で使えます。
-            </span>
-          ) : null}
+          {u.remainingLabel}
+          <b>{fill(u.remainingCount)}</b>
+          <span className="usage-sub">{sub}</span>
+          {left === 0 ? <span className="usage-empty">{u.empty}</span> : null}
         </span>
       )}
       <div className="usage-actions">
@@ -142,16 +144,16 @@ export default function UsageBanner({
           <>
             {!loggedIn ? (
               <a className="btn" href={loginHref}>
-                ログイン / 新規登録
+                {u.login}
               </a>
             ) : null}
             <a className="btn btn-primary-solid" href={upgradeHref}>
-              {loggedIn ? 'Proにアップグレード（月額500円）' : 'Proプラン（月額500円）で無制限＆AI超解像'}
+              {loggedIn ? u.upgradeLogged : u.upgradeAnon}
             </a>
           </>
         ) : canManage ? (
           <form action="/api/stripe/portal" method="post">
-            <button type="submit">プラン管理・解約</button>
+            <button type="submit">{u.manage}</button>
           </form>
         ) : null}
       </div>

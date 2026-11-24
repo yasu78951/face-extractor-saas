@@ -3,16 +3,25 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getViewer, type Viewer } from '@/lib/auth';
 import { isDemoMode, isSupabaseConfigured } from '@/lib/env';
+import { getLang } from '@/lib/i18n-server';
+import { messages } from '@/lib/messages';
 import { safeNextPath } from '@/lib/next-path';
 import { pageMetadata } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = pageMetadata({
-  title: 'ログイン / 新規登録',
-  description: 'ベストショット抽出のログイン・新規登録ページです。',
-  noindex: true,
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await getLang();
+  return pageMetadata({
+    title: lang === 'en' ? 'Sign in / Sign up' : 'ログイン / 新規登録',
+    description:
+      lang === 'en'
+        ? 'Sign in or create an account for Best Shot Extractor.'
+        : 'ベストショット抽出のログイン・新規登録ページです。',
+    noindex: true,
+    lang,
+  });
+}
 
 type Search = {
   sent?: string;
@@ -21,18 +30,10 @@ type Search = {
   next?: string;
 };
 
-const ERROR_MESSAGES: Record<string, string> = {
-  email: 'メールアドレスの形式を確認してください。',
-  send: 'ログインメールを送信できませんでした。時間をおいてもう一度お試しください。',
-  auth: 'ログインの確認に失敗しました。もう一度お試しください。',
-  expired:
-    'ログインリンクの有効期限が切れているか、すでに使用済みです。お手数ですが、もう一度ログインリンクを送信してください。',
-  google: 'Googleログインを開始できませんでした。メールでのログインをお試しください。',
-  demo: 'Supabaseが未設定のため、ログインは利用できません（デモモード）。',
-};
-
 export default async function SignInPage({ searchParams }: { searchParams: Promise<Search> }) {
   const sp = await searchParams;
+  const lang = await getLang();
+  const t = messages[lang].signin;
   const next = safeNextPath(sp.next);
 
   let viewer: Viewer | null = null;
@@ -45,53 +46,51 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
 
   const configured = isSupabaseConfigured();
   const demo = isDemoMode();
+  const errorMessage = sp.error
+    ? (t.errors as Record<string, string>)[sp.error] ?? t.genericError
+    : null;
 
   return (
     <div className="signin-wrap">
       <div className="signin-card">
-        <h1>ログイン / 新規登録</h1>
-        <p className="lead">
-          アカウントを作ると、1日の利用回数がアカウントに紐づきます（同じアカウントなら端末を変えても回数は共有）。
-          Proプランもここからお申し込みいただけます。
-        </p>
+        <h1>{t.title}</h1>
+        <p className="lead">{t.lead}</p>
 
         <div className="signin-skip">
-          ログインはProプランにする時だけで大丈夫です。{' '}
-          <Link href="/app">ログインなしで無料で試す（1日3本まで）</Link>
+          {t.skip} <Link href="/app">{t.skipLink}</Link>
         </div>
 
         {demo ? (
           <div className="notice notice-warn">
-            現在はデモモードです（Supabase未設定）。<Link href="/app">ログインなしでツール画面を開く</Link> か、
-            SETUP.md の手順でSupabaseを接続してください。
+            {t.demoNotice}
+            <Link href="/app">{t.demoLink}</Link>
+            {t.demoAfter}
           </div>
         ) : null}
 
         {sp.sent ? (
           <div className="notice notice-success">
-            <b>{sp.email ?? 'ご入力のメールアドレス'}</b> にログインリンクを送りました。メールを開いてリンクを押すと
-            ログインできます（迷惑メールフォルダもご確認ください）。
+            <b>{sp.email ?? t.sentEmailFallback}</b>
+            {t.sentBefore}
             <br />
-            リンクは1回だけ使えます（有効期限は約1時間）。同じリンクを2回押すと期限切れになります。
+            {t.sentExpiry}
           </div>
         ) : null}
 
-        {sp.error ? (
-          <div className="notice notice-warn">{ERROR_MESSAGES[sp.error] ?? 'エラーが発生しました。'}</div>
-        ) : null}
+        {errorMessage ? <div className="notice notice-warn">{errorMessage}</div> : null}
 
         {configured ? (
           <>
             <a href={`/auth/google?next=${encodeURIComponent(next)}`} className="btn btn-outline btn-block">
-              <span aria-hidden="true">G</span> Googleでログイン
+              <span aria-hidden="true">G</span> {t.google}
             </a>
 
-            <div className="divider">または メールアドレスで</div>
+            <div className="divider">{t.divider}</div>
 
             <form action="/auth/sign-in" method="post">
               <input type="hidden" name="next" value={next} />
               <div className="field">
-                <label htmlFor="email">メールアドレス</label>
+                <label htmlFor="email">{t.emailLabel}</label>
                 <input
                   id="email"
                   name="email"
@@ -102,22 +101,25 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
                   defaultValue={sp.email ?? ''}
                   placeholder="you@example.com"
                 />
-                <span className="field-hint">パスワードは不要です。ログイン用のリンクをお送りします。</span>
+                <span className="field-hint">{t.emailHint}</span>
               </div>
               <button type="submit" className="btn btn-primary btn-block">
-                ログインリンクを送る
+                {t.submit}
               </button>
             </form>
           </>
         ) : (
           <Link href="/app" className="btn btn-primary btn-block">
-            デモモードでツールを開く
+            {t.demoBtn}
           </Link>
         )}
 
         <p className="legal-links">
-          続行すると <Link href="/terms">利用規約</Link> と <Link href="/privacy">プライバシーポリシー</Link>{' '}
-          に同意したものとみなされます。
+          {t.legalBefore}
+          <Link href="/terms">{t.legalTerms}</Link>
+          {t.legalMiddle}
+          <Link href="/privacy">{t.legalPrivacy}</Link>
+          {t.legalAfter}
         </p>
       </div>
     </div>

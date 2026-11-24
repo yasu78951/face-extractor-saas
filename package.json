@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "verify": "python3 scripts/verify.py",
     "verify:anon": "python3 scripts/verify-anon.py",
-    "verify:auth": "python3 scripts/verify-auth.py"
+    "verify:auth": "python3 scripts/verify-auth.py",
+    "verify:i18n": "python3 scripts/verify-i18n.py"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

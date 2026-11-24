@@ -7,17 +7,36 @@ import { getUsageStatus, getViewer, type Viewer } from '@/lib/auth';
 import { ANON_USAGE_COOKIE } from '@/lib/anon-usage';
 import { anonUsageSnapshot } from '@/lib/usage';
 import { FREE_DAILY_LIMIT, isDemoMode, isStripeConfigured } from '@/lib/env';
+import { getLang } from '@/lib/i18n-server';
+import { messages } from '@/lib/messages';
 import { pageMetadata } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = pageMetadata({
-  title: '動画から顔写真を抽出するツール（無料・ログイン不要）｜ベストショット抽出',
-  description:
-    '動画を選ぶだけで、正面・ピント・顔の大きさでベストショットを自動抽出。無料プランはログイン不要で1日3本・5分以内、Proプランは本数無制限＋AI超解像。動画はアップロードされず端末内で処理します。',
-  path: '/app',
-  absoluteTitle: true,
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await getLang();
+  const t = messages[lang];
+
+  return pageMetadata(
+    lang === 'en'
+      ? {
+          title: 'Face photo extractor from video (free, no sign-up) | Best Shot Extractor',
+          description:
+            'Pick a video and the best shots are extracted automatically by facing direction, focus and face size. The free plan needs no sign-up (3 videos a day, up to 5 minutes); Pro is unlimited with AI upscaling. Your video is processed on your device and never uploaded.',
+          path: '/app',
+          absoluteTitle: true,
+          lang,
+        }
+      : {
+          title: '動画から顔写真を抽出するツール（無料・ログイン不要）｜ベストショット抽出',
+          description:
+            '動画を選ぶだけで、正面・ピント・顔の大きさでベストショットを自動抽出。無料プランはログイン不要で1日3本・5分以内、Proプランは本数無制限＋AI超解像。動画はアップロードされず端末内で処理します。',
+          path: '/app',
+          absoluteTitle: true,
+          lang,
+        },
+  );
+}
 
 type Search = {
   plan?: string;
@@ -27,6 +46,8 @@ type Search = {
 
 export default async function AppPage({ searchParams }: { searchParams: Promise<Search> }) {
   const sp = await searchParams;
+  const lang = await getLang();
+  const t = messages[lang];
   const demo = isDemoMode();
   const pricingHref = `/#pricing`;
   /** 未ログインなら、ログイン（＝アカウント作成）してから料金プランへ進む */
@@ -75,26 +96,26 @@ export default async function AppPage({ searchParams }: { searchParams: Promise<
       <div className="tool-top">
         <div className="tool-top-inner">
           <div className="tool-title">
-            <h1>🎬 顔写真抽出ツール</h1>
+            <h1>{t.tool.title}</h1>
             <p>
-              動画は端末内だけで処理されます（外部送信なし）
-              {!loggedIn ? '／ログインなしでお試しいただけます' : ''}
+              {t.tool.lead}
+              {!loggedIn ? t.tool.leadAnon : ''}
             </p>
           </div>
           {!isPro ? (
             <div className="tool-top-actions">
               {!loggedIn ? (
                 <a className="btn btn-top-login" href={loginHref}>
-                  ログイン
+                  {t.tool.login}
                 </a>
               ) : null}
               <a className="btn btn-upgrade" href={effectiveUpgradeHref}>
-                Proプランで本数無制限・AI超解像（月額500円）
+                {t.tool.upgrade}
               </a>
             </div>
           ) : (
             <Link className="btn btn-upgrade" href="/">
-              サービス紹介へ
+              {t.tool.back}
             </Link>
           )}
         </div>
@@ -109,42 +130,40 @@ export default async function AppPage({ searchParams }: { searchParams: Promise<
         demo={demo}
         loggedIn={loggedIn}
         loginHref={loginHref}
+        lang={lang}
       />
 
       <div className="tool-notice">
-        {checkoutSuccess ? (
-          <div className="notice notice-success">
-            Proプランへのお申し込みを受け付けました。反映まで数秒かかることがあります。表示が変わらない場合はページを再読み込みしてください。
-          </div>
-        ) : null}
-        {checkoutCancel ? (
-          <div className="notice notice-info">お申し込みをキャンセルしました。無料プランのままご利用いただけます。</div>
-        ) : null}
+        {checkoutSuccess ? <div className="notice notice-success">{t.tool.noticeSuccess}</div> : null}
+        {checkoutCancel ? <div className="notice notice-info">{t.tool.noticeCancel}</div> : null}
         {wantsUpgrade ? (
           isStripeConfigured() ? (
             <div className="notice notice-info">
-              Proプラン（月額500円）にアップグレードすると、本数無制限・時間制限なし・AI超解像が使えます。
+              {t.tool.noticeUpgradeTitle}
               <form action="/api/stripe/checkout" method="post" style={{ display: 'inline', marginLeft: 10 }}>
                 <button type="submit" className="btn btn-primary btn-sm">
-                  アップグレードへ進む
+                  {t.tool.noticeUpgradeBtn}
                 </button>
               </form>
             </div>
           ) : (
-            <div className="notice notice-warn">
-              現在Stripeが未設定のため、決済を受け付けられません（SETUP.md参照）。
-            </div>
+            <div className="notice notice-warn">{t.tool.noticeUnavailable}</div>
           )
         ) : null}
         {demo ? (
           <div className="notice notice-warn">
-            デモモード: 回数制限とプラン表示のみ再現しています（Supabase未接続）。{' '}
-            <Link href="/#pricing">料金プラン</Link>
+            {t.tool.noticeDemo} <Link href="/#pricing">{t.tool.noticeDemoLink}</Link>
           </div>
         ) : null}
       </div>
 
-      <ExtractorTool isPro={isPro} upgradeHref={effectiveUpgradeHref} remaining={remaining} anonymous={!loggedIn} />
+      <ExtractorTool
+        isPro={isPro}
+        upgradeHref={effectiveUpgradeHref}
+        remaining={remaining}
+        anonymous={!loggedIn}
+        lang={lang}
+      />
     </>
   );
 }

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
+import type { Lang } from '@/lib/i18n';
+import { messages } from '@/lib/messages';
 import { safeNextPath } from '@/lib/next-path';
 
 /**
@@ -16,11 +18,14 @@ import { safeNextPath } from '@/lib/next-path';
 export default function CallbackClient({
   supabaseUrl,
   supabaseAnonKey,
+  lang = 'ja',
 }: {
   supabaseUrl: string;
   supabaseAnonKey: string;
+  lang?: Lang;
 }) {
-  const [message, setMessage] = useState('ログインを確認しています…');
+  const t = messages[lang].callback;
+  const [message, setMessage] = useState(t.checking);
 
   useEffect(() => {
     let cancelled = false;
@@ -86,7 +91,7 @@ export default function CallbackClient({
 
       // 4) 何も無い（リンクを直接開いた等）
       if (!cancelled) {
-        setMessage('ログインの確認ができませんでした。');
+        setMessage(t.failed);
         go('/signin?error=auth');
       }
     })();
@@ -94,17 +99,19 @@ export default function CallbackClient({
     return () => {
       cancelled = true;
     };
-  }, [supabaseUrl, supabaseAnonKey]);
+  }, [supabaseUrl, supabaseAnonKey, t]);
 
   return (
     <div className="signin-wrap">
       <div className="signin-card">
-        <h1>ログイン</h1>
+        <h1>{t.title}</h1>
         <p className="lead" role="status" aria-live="polite">
           {message}
         </p>
         <p className="field-hint">
-          自動で切り替わらない場合は <Link href="/signin">ログイン画面へ</Link> お進みください。
+          {t.hintBefore}
+          <Link href="/signin">{t.hintLink}</Link>
+          {t.hintAfter}
         </p>
       </div>
     </div>

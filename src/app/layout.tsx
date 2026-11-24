@@ -3,59 +3,69 @@ import './globals.css';
 import { getViewer, type Viewer } from '@/lib/auth';
 import { SiteFooter, SiteHeader } from '@/components/SiteHeader';
 import { isDemoMode } from '@/lib/env';
-import {
-  SITE_DESCRIPTION,
-  SITE_KEYWORDS,
-  SITE_NAME,
-  SITE_OG_IMAGE,
-  SITE_TITLE,
-  SITE_URL,
-} from '@/lib/site';
+import { htmlLang, ogLocale, withLangPath } from '@/lib/i18n';
+import { getLang } from '@/lib/i18n-server';
+import { messages } from '@/lib/messages';
+import { SITE_OG_IMAGE, SITE_URL, siteNameFor } from '@/lib/site';
 
 /** Google Search Console の所有権確認トークン（環境変数 NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION で差し替え可能） */
 const googleSiteVerification =
   process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || 'n3ASV73EFZW1g2zgjQWNVcRHV0-kmr0ZTCiGlSVm__E';
 
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
-  title: {
-    default: SITE_TITLE,
-    template: `%s｜${SITE_NAME}`,
-  },
-  description: SITE_DESCRIPTION,
-  keywords: SITE_KEYWORDS,
-  applicationName: SITE_NAME,
-  authors: [{ name: SITE_NAME, url: SITE_URL }],
-  creator: SITE_NAME,
-  publisher: SITE_NAME,
-  openGraph: {
-    type: 'website',
-    locale: 'ja_JP',
-    siteName: SITE_NAME,
-    title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
-    url: SITE_URL,
-    images: [SITE_OG_IMAGE],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
-    images: [SITE_OG_IMAGE.url],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
+/** ページごとのタイトルはそのままに、サイト名の区切りだけ言語に合わせる */
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await getLang();
+  const t = messages[lang].common;
+  const siteName = siteNameFor(lang);
+
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: {
+      default: t.siteTitle,
+      template: lang === 'en' ? `%s | ${siteName}` : `%s｜${siteName}`,
+    },
+    description: t.siteDescription,
+    keywords: t.keywords,
+    applicationName: siteName,
+    authors: [{ name: siteName, url: SITE_URL }],
+    creator: siteName,
+    publisher: siteName,
+    alternates: {
+      languages: { ja: '/', en: withLangPath('/', 'en'), 'x-default': '/' },
+    },
+    openGraph: {
+      type: 'website',
+      locale: ogLocale(lang),
+      siteName,
+      title: t.siteTitle,
+      description: t.siteDescription,
+      url: lang === 'en' ? withLangPath('/', 'en') : SITE_URL,
+      images: [{ ...SITE_OG_IMAGE, alt: t.ogImageAlt }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: t.siteTitle,
+      description: t.siteDescription,
+      images: [SITE_OG_IMAGE.url],
+    },
+    robots: {
       index: true,
       follow: true,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-      'max-video-preview': -1,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+        'max-video-preview': -1,
+      },
     },
-  },
-  verification: { google: googleSiteVerification },
-};
+    verification: { google: googleSiteVerification },
+    other: {
+      // 検索エンジンに「同じURLでも言語で内容が変わる」ことを伝える
+      'content-language': lang,
+    },
+  };
+}
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -71,17 +81,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     viewer = null;
   }
 
+  const lang = await getLang();
+
   return (
-    <html lang="ja">
+    <html lang={htmlLang(lang)}>
       <body>
         {isDemoMode() ? (
-          <div className="demo-bar">
-            <b>デモモード</b>（Supabase未設定）: ログインなしで画面を確認できます。SETUP.md の手順で接続すると本番のログイン・課金が有効になります。
-          </div>
+          <div className="demo-bar">{messages[lang].demoBar}</div>
         ) : null}
-        <SiteHeader viewer={viewer} />
+        <SiteHeader viewer={viewer} lang={lang} />
         {children}
-        <SiteFooter />
+        <SiteFooter lang={lang} />
       </body>
     </html>
   );

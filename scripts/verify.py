@@ -119,6 +119,8 @@ def main():
             def new_page(width, height, mobile=False):
                 ctx = browser.new_context(
                     viewport={"width": width, "height": height},
+                    # 日本語利用者のブラウザを再現する（表示言語は Accept-Language でも決まる）
+                    locale="ja-JP",
                     device_scale_factor=2 if mobile else 1,
                     is_mobile=mobile,
                     has_touch=mobile,

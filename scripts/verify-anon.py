@@ -115,7 +115,7 @@ def main():
         with sync_playwright() as p:
             browser = p.chromium.launch(executable_path=CHROME, args=["--no-sandbox", "--disable-dev-shm-usage"], env=env)
 
-            ctx = browser.new_context(viewport={"width": 1280, "height": 900})
+            ctx = browser.new_context(viewport={"width": 1280, "height": 900}, locale="ja-JP")
             page = ctx.new_page()
             STATE = {"ignore_429": False}
 
@@ -237,7 +237,7 @@ def main():
             check("前日までのCookieは0本にリセット", status.get("used") == 0, json.dumps(status))
 
             # ---- 6. ログインページ・トップの整合 ----
-            p3 = browser.new_context(viewport={"width": 1280, "height": 900}).new_page()
+            p3 = browser.new_context(viewport={"width": 1280, "height": 900}, locale="ja-JP").new_page()
             p3.goto(BASE + "/signin", wait_until="load")
             check("/signin にログイン不要の案内", "ログインなしで無料で試す" in p3.inner_text("body"))
             check("/signin はデモ表記なし（本番設定）", "デモモード" not in p3.inner_text("body"))

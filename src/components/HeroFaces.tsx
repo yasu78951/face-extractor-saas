@@ -10,6 +10,8 @@ export type HeroFace = {
   score: number;
   rank: string;
   alt: string;
+  /** 英語表示用の代替テキスト */
+  altEn: string;
   /**
    * 下位ほどほんのり控えめなトーンにするための段階（0 = ベストショット）。
    * 写真そのものの表情・角度の違いを活かし、CSS側はごく軽い調整に留めています。
@@ -23,6 +25,7 @@ export const HERO_FACES: HeroFace[] = [
     score: 98,
     rank: '★ BEST',
     alt: '正面・笑顔でくっきりしたサンプル写真（ベストショット）',
+    altEn: 'Sample portrait facing the camera with a clear smile (best shot)',
     tone: 0,
   },
   {
@@ -30,6 +33,7 @@ export const HERO_FACES: HeroFace[] = [
     score: 94,
     rank: '#2',
     alt: '少し横向きのサンプル写真',
+    altEn: 'Sample portrait turned slightly to the side',
     tone: 1,
   },
   {
@@ -37,6 +41,7 @@ export const HERO_FACES: HeroFace[] = [
     score: 91,
     rank: '#3',
     alt: '目を閉じかけたサンプル写真',
+    altEn: 'Sample portrait with the eyes half closed',
     tone: 2,
   },
   {
@@ -44,6 +49,7 @@ export const HERO_FACES: HeroFace[] = [
     score: 87,
     rank: '#4',
     alt: '横顔のサンプル写真',
+    altEn: 'Sample portrait in profile',
     tone: 3,
   },
   {
@@ -51,6 +57,7 @@ export const HERO_FACES: HeroFace[] = [
     score: 83,
     rank: '#5',
     alt: '少し遠目のサンプル写真',
+    altEn: 'Sample portrait photographed from a little further away',
     tone: 4,
   },
   {
@@ -58,6 +65,7 @@ export const HERO_FACES: HeroFace[] = [
     score: 79,
     rank: '#6',
     alt: '動きでブレたサンプル写真',
+    altEn: 'Sample portrait blurred by motion',
     tone: 5,
   },
 ];

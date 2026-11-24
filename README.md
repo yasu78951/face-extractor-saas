@@ -30,6 +30,22 @@
 - ブラウザの履歴削除・シークレットモードではリセットされ得ます（離脱を減らすことを優先した割り切り）。
 - 画面側は `localStorage`（`fe_usage`）に補助記録し、リロード時は `/api/usage/status` と突き合わせて残り回数を表示します。
 
+## 多言語（日本語 / 英語）
+
+海外向けに **日本語（`ja`）/ 英語（`en`）** のバイリンガル表示に対応しています。既存の日本語URL（`/`, `/app`, `/signin`, `/terms`, `/privacy`, `/tokushoho`, `/auth/callback`）はそのまま使えます。
+
+- **判定**（`src/proxy.ts` が1リクエストごとに行い、結果を `x-fe-lang` ヘッダーでサーバー側へ渡す）
+  1. URLクエリ `?lang=en` / `?lang=ja`（指定時は Cookie `fe_lang` に保存）
+  2. Cookie `fe_lang`（1年保持。ヘッダー右上の `JP / EN` で更新）
+  3. `Accept-Language`（`ja` を含まなければ英語、含む／不明なら日本語）
+  - 検索エンジン・SNSのクローラーは、既存の日本語ページの評価を守るため 3 を飛ばして日本語（`?lang=en` と Cookie は尊重）
+- **文言**: `src/lib/messages.ts` に `ja` / `en` を同型で定義（キー漏れはビルド時の型チェックで検出）。`<html lang>` とメタデータ（title / description / OGP / canonical / hreflang）も言語ごとに出力します。
+- **法務ページ**: `terms` / `privacy` / `tokushoho` は各 `page.tsx` 内の `...Ja` / `...En` を出し分け（英語表示では英文の規約・ポリシー・事業者情報を表示）。
+- **ツール本体**（`public/engine/app.js`）: 動的な文言は `T(日本語, 英語)` で切り替え、言語は `window.__FE_LANG` で受け取ります。
+- **Stripe Checkout**: Cookie `fe_lang` を読み、`locale: 'en' | 'ja'` を渡して決済画面も言語を合わせます。
+
+検証は `npm run build && python3 scripts/verify-i18n.py`（英語ページ・言語切替・優先順位・iPhone 390px 幅・英語UIでの解析）。
+
 ## 画面
 
 | パス | 内容 |

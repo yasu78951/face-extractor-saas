@@ -7,6 +7,12 @@ import { aiSupported, ensureAi, aiUpscale } from './lib/ai-upscale.js';
 
 const $ = (id) => document.getElementById(id);
 const DEBUG = new URLSearchParams(location.search).has('debug');
+
+/* ---------- 表示言語（日本語 / 英語） ----------
+ * 画面の言語はサーバー側（Cookie fe_lang / ?lang= / Accept-Language）が決め、
+ * ExtractorTool が window.__FE_LANG で渡す。動的に出す文言は T(日本語, 英語) で切り替える。 */
+const LANG = window.__FE_LANG === 'en' ? 'en' : 'ja';
+const T = (ja, en) => (LANG === 'en' ? en : ja);
 if (window.__FE_BOOTED) throw new Error('face-extractor already booted');
 window.__FE_BOOTED = true;
 window.__fe = { debug: [] };
@@ -18,7 +24,7 @@ const gate = () => window.__FE_GATE || { isPro: false, remaining: null, upgradeU
 const isPro = () => !!gate().isPro;
 const isAnonymous = () => !!gate().anonymous;
 const upgradeHref = () => gate().upgradeUrl || '/#pricing';
-const upgradeLink = (label = '月額500円のProプランを見る') => `<a class="upgrade-link" href="${upgradeHref()}">${label} →</a>`;
+const upgradeLink = (label = T('月額500円のProプランを見る', 'View the Pro plan (¥500/mo)')) => `<a class="upgrade-link" href="${upgradeHref()}">${label} →</a>`;
 
 /* 未ログイン利用の補助記録（サーバーの署名Cookieが正。こちらは表示同期用） */
 const USAGE_STORAGE_KEY = 'fe_usage';
@@ -47,12 +53,14 @@ function showLimit(title, detail) {
 async function requestStart(duration) {
   if (isPro()) return true;
   if (!(duration > 0)) {
-    showLimit('動画の長さを確認できませんでした', 'この形式の動画は解析できない可能性があります。H.264 の MP4 でお試しください。');
+    showLimit(T('動画の長さを確認できませんでした', 'Could not read the video length'),
+      T('この形式の動画は解析できない可能性があります。H.264 の MP4 でお試しください。', 'This format may not be analyzable. Please try an H.264 MP4.'));
     return false;
   }
   if (duration > FREE_MAX_SECONDS) {
-    showLimit('無料プランは5分（300秒）までの動画に対応しています',
-      `この動画は ${Math.round(duration)} 秒です。5分を超える動画は ${upgradeLink()}。`);
+    showLimit(T('無料プランは5分（300秒）までの動画に対応しています', 'The free plan covers videos up to 5 minutes (300 s)'),
+      T(`この動画は ${Math.round(duration)} 秒です。5分を超える動画は ${upgradeLink()}。`,
+        `This video is ${Math.round(duration)} s long. For videos over 5 minutes, ${upgradeLink()}.`));
     return false;
   }
   try {
@@ -76,26 +84,36 @@ async function requestStart(duration) {
       }
       const anon = data.anonymous !== undefined ? !!data.anonymous : isAnonymous();
       const lead = anon
-        ? '無料プランはログインなしで1日3本まで試せます（日本時間の0時にリセット）。'
-        : '無料プランは1日3本までです（日本時間の0時にリセット）。';
+        ? T('無料プランはログインなしで1日3本まで試せます（日本時間の0時にリセット）。',
+            'The free plan lets you try 3 videos a day without signing in (resets at midnight JST).')
+        : T('無料プランは1日3本までです（日本時間の0時にリセット）。',
+            'The free plan allows 3 videos a day (resets at midnight JST).');
       const cta = anon
-        ? 'ログインしてProプラン（月額500円）にすると、本数無制限・時間制限なし・AI超解像が使えます。'
-        : '本数を気にせず使うならProプラン（月額500円）がおすすめです。';
-      showLimit('本日の無料回数（3回）を使い切りました',
-        `${lead}${cta} ${upgradeLink(anon ? 'ログインしてProプランを見る' : '月額500円のProプランを見る')}`);
+        ? T('ログインしてProプラン（月額500円）にすると、本数無制限・時間制限なし・AI超解像が使えます。',
+            'Sign in and go Pro (¥500/mo) for unlimited videos, no length limit and AI upscaling.')
+        : T('本数を気にせず使うならProプラン（月額500円）がおすすめです。',
+            'Go Pro (¥500/mo) to stop counting videos.');
+      showLimit(T('本日の無料回数（3回）を使い切りました', 'You have used all 3 free analyses for today'),
+        `${lead}${cta} ${upgradeLink(anon ? T('ログインしてProプランを見る', 'Sign in and see Pro') : T('月額500円のProプランを見る', 'View the Pro plan (¥500/mo)'))}`);
     } else if (data && data.reason === 'duration_limit') {
-      showLimit('無料プランは5分（300秒）までの動画に対応しています', `5分を超える動画は ${upgradeLink('Proプランなら時間制限なし')}。`);
+      showLimit(T('無料プランは5分（300秒）までの動画に対応しています', 'The free plan covers videos up to 5 minutes (300 s)'),
+        T(`5分を超える動画は ${upgradeLink('Proプランなら時間制限なし')}。`,
+          `For longer videos, ${upgradeLink('Pro has no length limit')}.`));
     } else if (data && data.reason === 'unauthenticated') {
-      showLimit('ログインが必要です', `ログインし直すか、${upgradeLink('ログインして続ける')}`);
+      showLimit(T('ログインが必要です', 'Please sign in'),
+        T(`ログインし直すか、${upgradeLink('ログインして続ける')}`, `Sign in again, or ${upgradeLink('sign in to continue')}`));
     } else {
-      showLimit('解析を開始できませんでした',
-        `${(data && data.message) || '利用状況を確認できませんでした。時間をおいてもう一度お試しください。'} ${upgradeLink()}`);
+      const generic = T('利用状況を確認できませんでした。時間をおいてもう一度お試しください。',
+        'Could not check your usage. Please try again in a moment.');
+      showLimit(T('解析を開始できませんでした', 'Could not start the analysis'),
+        `${LANG === 'en' ? generic : ((data && data.message) || generic)} ${upgradeLink()}`);
     }
     return false;
   } catch (e) {
     console.error(e);
-    showLimit('通信エラーで利用状況を確認できませんでした',
-      'インターネット接続を確認して、もう一度「解析スタート」を押してください。');
+    showLimit(T('通信エラーで利用状況を確認できませんでした', 'Could not reach the server to check your usage'),
+      T('インターネット接続を確認して、もう一度「解析スタート」を押してください。',
+        'Check your internet connection, then press “Start analysis” again.'));
     return false;
   }
 }
@@ -159,7 +177,9 @@ function fmtTime(t) {
 }
 function fmtDur(t) {
   const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = Math.floor(t % 60);
-  return h > 0 ? `${h}時間${m}分${s}秒` : `${m}分${s}秒`;
+  return h > 0
+    ? T(`${h}時間${m}分${s}秒`, `${h} h ${m} min ${s} s`)
+    : T(`${m}分${s}秒`, `${m} min ${s} s`);
 }
 function fmtBytes(b) {
   if (b >= 1024 ** 3) return `${(b / 1024 ** 3).toFixed(2)} GB`;
@@ -227,12 +247,13 @@ function loadModel() {
     return inst;
   })();
   state.modelPromise.then(
-    () => { state.modelState = 'ready'; setModelStatus('ok', 'AIモデル 準備完了'); },
+    () => { state.modelState = 'ready'; setModelStatus('ok', T('AIモデル 準備完了', 'AI model ready')); },
     (err) => {
       state.modelState = 'error'; state.modelError = err;
       console.error(err);
-      setModelStatus('ng', 'AIモデル読込エラー');
-      showError('AIモデルの読み込みに失敗しました。<br>通信環境を確認してページを再読み込みしてください（初回だけAIモデル数MBをダウンロードします）。<br>解決しない場合は、しばらく時間をおいてからもう一度お試しください。');
+      setModelStatus('ng', T('AIモデル読込エラー', 'AI model failed to load'));
+      showError(T('AIモデルの読み込みに失敗しました。<br>通信環境を確認してページを再読み込みしてください（初回だけAIモデル数MBをダウンロードします）。<br>解決しない場合は、しばらく時間をおいてからもう一度お試しください。',
+        'The AI model failed to load.<br>Check your connection and reload the page (the model is a few MB and downloads only once).<br>If it still fails, please try again later.'));
     }
   );
   return state.modelPromise;
@@ -241,7 +262,7 @@ function loadModel() {
 /** GPU実行が途中で失敗し続ける場合にCPUへ切り替える（Safari/iPhone対策） */
 async function switchToCPU() {
   if (state.delegate === 'CPU' || !state.vision) return;
-  setModelStatus('wait', 'AIモデル 切替中…');
+  setModelStatus('wait', T('AIモデル 切替中…', 'Switching AI model…'));
   try {
     const make = {
       baseOptions: { modelAssetPath: '/engine/models/face_landmarker.task', delegate: 'CPU' },
@@ -257,10 +278,10 @@ async function switchToCPU() {
     try { state.landmarker.close && state.landmarker.close(); } catch (e) { /* ignore */ }
     state.landmarker = inst;
     state.delegate = 'CPU';
-    setModelStatus('ok', 'AIモデル 準備完了');
+    setModelStatus('ok', T('AIモデル 準備完了', 'AI model ready'));
   } catch (e) {
     console.error('CPU fallback failed', e);
-    setModelStatus('ok', 'AIモデル 準備完了');
+    setModelStatus('ok', T('AIモデル 準備完了', 'AI model ready'));
   }
 }
 
@@ -273,7 +294,7 @@ function clearError() { els.loadError.hidden = true; els.loadError.innerHTML = '
 
 async function loadFile(file) {
   if (!file) return;
-  if (state.running) { toast('解析中は動画を変えられません'); return; }
+  if (state.running) { toast(T('解析中は動画を変えられません', 'You cannot change the video while analyzing')); return; }
   clearError();
   els.resultCard.hidden = true;
   els.progressCard.hidden = true;
@@ -293,7 +314,8 @@ async function loadFile(file) {
   if (!v.videoWidth || !v.videoHeight) {
     els.videoInfo.hidden = true;
     els.startBtn.disabled = true;
-    showError('この動画はブラウザで再生できませんでした。<br>動画が壊れているか、ブラウザが対応していない形式（HEVC/H.265 など）の可能性があります。<br><b>H.264 の MP4</b> に変換してから読み込んでください。');
+    showError(T('この動画はブラウザで再生できませんでした。<br>動画が壊れているか、ブラウザが対応していない形式（HEVC/H.265 など）の可能性があります。<br><b>H.264 の MP4</b> に変換してから読み込んでください。',
+      'This video could not be played in your browser.<br>The file may be damaged, or in a format the browser does not support (such as HEVC/H.265).<br>Please convert it to an <b>H.264 MP4</b> and load it again.'));
     URL.revokeObjectURL(url);
     return;
   }
@@ -306,7 +328,7 @@ async function loadFile(file) {
   state.baseName = (file.name.replace(/\.[^.]+$/, '') || 'video').replace(/[\\/:*?"<>|\s]+/g, '_').slice(0, 30);
 
   els.mName.textContent = file.name;
-  els.mDur.textContent = state.duration ? fmtDur(state.duration) : '不明';
+  els.mDur.textContent = state.duration ? fmtDur(state.duration) : T('不明', 'Unknown');
   els.mRes.textContent = `${state.vw} × ${state.vh}`;
   els.mSize.textContent = fmtBytes(file.size);
   els.videoInfo.hidden = false;
@@ -315,14 +337,16 @@ async function loadFile(file) {
   // 無料プランは5分まで（クライアント側の事前チェック。サーバー側でも duration を検証する）
   if (!isPro() && state.duration > FREE_MAX_SECONDS) {
     els.startBtn.disabled = true;
-    showLimit('無料プランは5分（300秒）までの動画に対応しています',
-      `この動画は ${Math.round(state.duration)} 秒です。5分を超える動画は ${upgradeLink()}。`);
+    showLimit(T('無料プランは5分（300秒）までの動画に対応しています', 'The free plan covers videos up to 5 minutes (300 s)'),
+      T(`この動画は ${Math.round(state.duration)} 秒です。5分を超える動画は ${upgradeLink()}。`,
+        `This video is ${Math.round(state.duration)} s long. For videos over 5 minutes, ${upgradeLink()}.`));
   }
   // iOS Safari は「一度も再生していない動画」からの描画が不安定なので、読み込み直後に無音で一瞬だけ再生しておく
   await primeVideo(v);
 
   if (!state.duration) {
-    showError('動画の長さを取得できませんでした。この形式は解析できない可能性があります（H.264 の MP4 を推奨）。');
+    showError(T('動画の長さを取得できませんでした。この形式は解析できない可能性があります（H.264 の MP4 を推奨）。',
+      'Could not read the video length. This format may not be analyzable (H.264 MP4 recommended).'));
     els.startBtn.disabled = true;
   }
 }
@@ -491,11 +515,11 @@ function scoreAll(list) {
     const total = 0.32 * frontScore + 0.28 * sharpScore + 0.18 * sizeScore + 0.12 * eyeScore + 0.10 * expScore;
     a.score = { total, front: frontScore, sharp: sharpScore, size: sizeScore, eye: eyeScore, exp: expScore };
     a.warns = [];
-    if (frontScore < 45) a.warns.push('横向き');
-    if (sharpScore < 45) a.warns.push('ブレ');
-    if (eyeScore < 45) a.warns.push('目つむり');
-    if (sizeScore < 35) a.warns.push('小さい');
-    if (expScore < 45) a.warns.push('暗い/白飛び');
+    if (frontScore < 45) a.warns.push(T('横向き', 'sideways'));
+    if (sharpScore < 45) a.warns.push(T('ブレ', 'blurry'));
+    if (eyeScore < 45) a.warns.push(T('目つむり', 'eyes closed'));
+    if (sizeScore < 35) a.warns.push(T('小さい', 'too small'));
+    if (expScore < 45) a.warns.push(T('暗い/白飛び', 'dark/blown out'));
   }
   return list;
 }
@@ -598,7 +622,7 @@ async function analyze() {
 
   if (state.modelState !== 'ready') {
     els.progressCard.hidden = false;
-    els.progressText.textContent = 'AIモデルを読み込み中…（初回は数秒かかります）';
+    els.progressText.textContent = T('AIモデルを読み込み中…（初回は数秒かかります）', 'Loading the AI model… (a few seconds the first time)');
     try { await loadModel(); } catch (e) { els.progressCard.hidden = true; return; }
   }
 
@@ -727,19 +751,21 @@ async function analyze() {
       const per = el / doneN;
       const remain = Math.max(0, per * (times.length - doneN));
       setBar(doneN / times.length * 100);
-      els.progressText.textContent = `解析中… ${doneN} / ${times.length} フレーム（${Math.round(doneN / times.length * 100)}%） 残り約${remain < 60 ? Math.ceil(remain) + '秒' : Math.ceil(remain / 60) + '分'}`;
+      els.progressText.textContent = LANG === 'en'
+        ? `Analyzing… ${doneN} / ${times.length} frames (${Math.round(doneN / times.length * 100)}%) · about ${remain < 60 ? Math.ceil(remain) + ' s' : Math.ceil(remain / 60) + ' min'} left`
+        : `解析中… ${doneN} / ${times.length} フレーム（${Math.round(doneN / times.length * 100)}%） 残り約${remain < 60 ? Math.ceil(remain) + '秒' : Math.ceil(remain / 60) + '分'}`;
       await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
     }
   } catch (e) {
     console.error(e);
-    showError('解析中にエラーが発生しました: ' + (e && e.message ? e.message : e));
+    showError(T('解析中にエラーが発生しました: ', 'An error occurred during analysis: ') + (e && e.message ? e.message : e));
   }
 
   if (state.cancelRequested) {
     state.running = false;
     els.startBtn.disabled = false;
     els.progressCard.hidden = true;
-    toast('解析をキャンセルしました');
+    toast(T('解析をキャンセルしました', 'Analysis cancelled'));
     return;
   }
 
@@ -751,13 +777,15 @@ async function analyze() {
     els.startBtn.disabled = false;
     els.progressCard.hidden = true;
     els.resultCard.hidden = false;
-    els.summary.innerHTML = `解析したフレーム: <b>${times.length}</b> ／ 顔が見つかったフレーム: <b>0</b>`;
-    els.noFace.innerHTML = '顔を検出できませんでした。<br>・顔が小さすぎる / 暗すぎる / 横向きが強い動画では検出できないことがあります。<br>・「解析する間隔」を 0.5秒 にして再試行すると見つかる場合があります。';
+    els.summary.innerHTML = T(`解析したフレーム: <b>${times.length}</b> ／ 顔が見つかったフレーム: <b>0</b>`,
+      `Frames analyzed: <b>${times.length}</b> / frames with a face: <b>0</b>`);
+    els.noFace.innerHTML = T('顔を検出できませんでした。<br>・顔が小さすぎる / 暗すぎる / 横向きが強い動画では検出できないことがあります。<br>・「解析する間隔」を 0.5秒 にして再試行すると見つかる場合があります。',
+      'No faces were detected.<br>· Faces that are too small, too dark, or mostly turned away may not be detected.<br>· Retrying with the frame interval set to 0.5 s can help.');
     els.noFace.hidden = false;
     return;
   }
 
-  els.progressText.textContent = '候補の画像を切り出しています…';
+  els.progressText.textContent = T('候補の画像を切り出しています…', 'Cropping the candidate images…');
   setBar(100);
   for (let i = 0; i < picked.length; i++) {
     await seekVideo(video, picked[i].t);
@@ -776,10 +804,19 @@ async function analyze() {
   els.progressCard.hidden = true;
   els.resultCard.hidden = false;
   const smallCount = picked.filter((c) => c.facePxW < 120).length;
+  const secs = ((performance.now() - t0) / 1000).toFixed(1);
+  const farNote = smallCount
+    ? T(`<br><span class="warn-tag">遠目の顔が ${smallCount} 枚あります — 自動でアップ・高画質化して保存できます</span>`,
+        `<br><span class="warn-tag">${smallCount} small/distant face${smallCount === 1 ? '' : 's'} — saved upscaled and enhanced automatically</span>`)
+    : '';
   els.summary.innerHTML =
-    `解析したフレーム: <b>${times.length}</b> ／ 顔を検出: <b>${framesWithFace}</b> フレーム ／ 候補: <b>${picked.length}</b> 枚` +
-    `　<span class="small">（解析 ${((performance.now() - t0) / 1000).toFixed(1)}秒${roiPasses ? `・遠目補正 ${roiPasses}回` : ''}）</span>` +
-    (smallCount ? `<br><span class="warn-tag">遠目の顔が ${smallCount} 枚あります — 自動でアップ・高画質化して保存できます</span>` : '');
+    (LANG === 'en'
+      ? `Frames analyzed: <b>${times.length}</b> / frames with a face: <b>${framesWithFace}</b> / picks: <b>${picked.length}</b>`
+      : `解析したフレーム: <b>${times.length}</b> ／ 顔を検出: <b>${framesWithFace}</b> フレーム ／ 候補: <b>${picked.length}</b> 枚`) +
+    (LANG === 'en'
+      ? `　<span class="small">(analyzed in ${secs} s${roiPasses ? ` · ${roiPasses} distant-face passes` : ''})</span>`
+      : `　<span class="small">（解析 ${secs}秒${roiPasses ? `・遠目補正 ${roiPasses}回` : ''}）</span>`) +
+    farNote;
   renderGrid();
   els.resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
   if (state.aiOn) processCardAi(cardRefs[0]);
@@ -849,12 +886,16 @@ function sizeClass(c) { return c.facePxW < 80 ? 'tiny' : c.facePxW < 120 ? 'smal
 function sizeInfoHtml(c) {
   const outPx = outSideFor(c);
   const sr = (state.aiOn && c.sr && c.sr.key === els.cropSel.value) ? c.sr : null;
-  let html = `元の顔 <b>${Math.round(c.facePxW)}×${Math.round(c.facePxH)}px</b>`;
-  if (sr) html += ` → AI超解像 <b>${sr.side}×${sr.side}px</b>`;
-  html += ` → 出力 <b>${outPx}×${outPx}px</b>`;
-  if (sr) html += '<div class="small-note">※ AI超解像（端末内AI）で高画質化した画像を保存します</div>';
-  else if (c.facePxW < 80) html += '<div class="tiny-note">※ 元画像が小さいため、AI補完時に顔立ちが変わる場合があります</div>';
-  else if (c.facePxW < 120) html += '<div class="small-note">※ 元画像が小さめです。アップ＋補正して保存します</div>';
+  let html = T(`元の顔 <b>${Math.round(c.facePxW)}×${Math.round(c.facePxH)}px</b>`,
+    `Source face <b>${Math.round(c.facePxW)}×${Math.round(c.facePxH)}px</b>`);
+  if (sr) html += T(` → AI超解像 <b>${sr.side}×${sr.side}px</b>`, ` → AI upscaled <b>${sr.side}×${sr.side}px</b>`);
+  html += T(` → 出力 <b>${outPx}×${outPx}px</b>`, ` → output <b>${outPx}×${outPx}px</b>`);
+  if (sr) html += T('<div class="small-note">※ AI超解像（端末内AI）で高画質化した画像を保存します</div>',
+    '<div class="small-note">Saves the image upscaled by on-device AI.</div>');
+  else if (c.facePxW < 80) html += T('<div class="tiny-note">※ 元画像が小さいため、AI補完時に顔立ちが変わる場合があります</div>',
+    '<div class="tiny-note">The source is small, so facial features can shift when AI completes it.</div>');
+  else if (c.facePxW < 120) html += T('<div class="small-note">※ 元画像が小さめです。アップ＋補正して保存します</div>',
+    '<div class="small-note">The source is smallish — it will be upscaled and enhanced when saved.</div>');
   return html;
 }
 
@@ -875,27 +916,27 @@ async function renderGrid() {
     const aiOk = aiSupported() && isPro();
     card.innerHTML = `
       <div class="thumbwrap">
-        <img alt="候補 ${i + 1}" src="">
+        <img alt="${T('候補', 'Candidate')} ${i + 1}" src="">
         <div class="rank ${i === 0 ? 'top1' : ''}">${i === 0 ? '★ BEST' : '#' + (i + 1)}</div>
-        <div class="total">${Math.round(sc.total)}点</div>
+        <div class="total">${Math.round(sc.total)}${T('点', ' pts')}</div>
         <div class="time">${fmtTime(c.t)}</div>
-        ${level !== 'none' ? '<div class="badge-enh">✨ 補正</div>' : ''}
+        ${level !== 'none' ? `<div class="badge-enh">${T('✨ 補正', '✨ Enhanced')}</div>` : ''}
         <div class="badge-ai" hidden>AI</div>
-        <div class="badge-sr" hidden>AI超解像</div>
+        <div class="badge-sr" hidden>${T('AI超解像', 'AI upscale')}</div>
       </div>
       <div class="cbody">
-        <div class="srow"><span>正面度</span><div class="track"><div class="fill" style="width:${sc.front}%"></div></div><span class="num">${Math.round(sc.front)}</span></div>
-        <div class="srow"><span>鮮明さ</span><div class="track"><div class="fill" style="width:${sc.sharp}%"></div></div><span class="num">${Math.round(sc.sharp)}</span></div>
-        <div class="srow"><span>大きさ</span><div class="track"><div class="fill" style="width:${sc.size}%"></div></div><span class="num">${Math.round(sc.size)}</span></div>
+        <div class="srow"><span>${T('正面度', 'Facing')}</span><div class="track"><div class="fill" style="width:${sc.front}%"></div></div><span class="num">${Math.round(sc.front)}</span></div>
+        <div class="srow"><span>${T('鮮明さ', 'Sharpness')}</span><div class="track"><div class="fill" style="width:${sc.sharp}%"></div></div><span class="num">${Math.round(sc.sharp)}</span></div>
+        <div class="srow"><span>${T('大きさ', 'Size')}</span><div class="track"><div class="fill" style="width:${sc.size}%"></div></div><span class="num">${Math.round(sc.size)}</span></div>
         ${c.warns.length ? `<div class="warns">${c.warns.map((w) => `<span class="warn-tag">${w}</span>`).join('')}</div>` : ''}
         <div class="sizeinfo ${sizeClass(c)}">${sizeInfoHtml(c)}</div>
-        ${level !== 'none' ? `<button class="btn btn-ghost small toggle" data-act="toggle" data-i="${i}">元画像を見る</button>` : ''}
+        ${level !== 'none' ? `<button class="btn btn-ghost small toggle" data-act="toggle" data-i="${i}">${T('元画像を見る', 'View original')}</button>` : ''}
         <div class="acts">
-          <button class="btn btn-main" data-act="jpg" data-i="${i}">JPG保存</button>
+          <button class="btn btn-main" data-act="jpg" data-i="${i}">${T('JPG保存', 'Save JPG')}</button>
           <button class="btn btn-ghost" data-act="png" data-i="${i}">PNG</button>
-          <button class="btn btn-ghost" data-act="frame" data-i="${i}">全体</button>
+          <button class="btn btn-ghost" data-act="frame" data-i="${i}">${T('全体', 'Full frame')}</button>
         </div>
-        ${aiOk ? `<button class="btn btn-sr" data-act="sr" data-i="${i}">✨ AI超解像</button>` : ''}
+        ${aiOk ? `<button class="btn btn-sr" data-act="sr" data-i="${i}">${T('✨ AI超解像', '✨ AI upscale')}</button>` : ''}
       </div>`;
     els.grid.appendChild(card);
     cardRefs.push({ card, img: card.querySelector('img'), c, aiBadge: card.querySelector('.badge-ai'), enhBadge: card.querySelector('.badge-enh'), srBadge: card.querySelector('.badge-sr'), toggle: card.querySelector('[data-act="toggle"]') });
@@ -917,7 +958,7 @@ function applyView(ref) {
   if (ref.enhBadge) ref.enhBadge.hidden = isOrig || !!srOn;
   if (ref.srBadge) ref.srBadge.hidden = !(srOn && !isOrig);
   if (ref.aiBadge) ref.aiBadge.hidden = true;
-  if (ref.toggle) ref.toggle.textContent = c.view === 'orig' ? '補正後を見る' : '元画像を見る';
+  if (ref.toggle) ref.toggle.textContent = c.view === 'orig' ? T('補正後を見る', 'View enhanced') : T('元画像を見る', 'View original');
   const info = ref.card && ref.card.querySelector('.sizeinfo');
   if (info) info.innerHTML = sizeInfoHtml(c);
 }
@@ -1036,7 +1077,7 @@ async function saveOne(i, format) {
     downloadBlob(blob, exportName(c, i, format, suffix));
   } catch (e) {
     console.error(e);
-    toast('保存に失敗しました');
+    toast(T('保存に失敗しました', 'Could not save'));
   }
 }
 
@@ -1046,27 +1087,32 @@ async function saveFrame(i) {
     const src = await fullResFrame(c.t);
     const blob = await canvasToBlob(src, 'image/jpeg', 0.95);
     downloadBlob(blob, exportName(c, i, 'jpg', 'frame'));
-  } catch (e) { toast('保存に失敗しました'); }
+  } catch (e) { toast(T('保存に失敗しました', 'Could not save')); }
 }
 
 async function saveAll() {
   els.saveAllBtn.disabled = true;
   const n = state.candidates.length;
-  if (IS_IOS) toast('「ダウンロード」を許可してください（ファイルアプリに保存されます）', 4000);
+  if (IS_IOS) toast(T('「ダウンロード」を許可してください（ファイルアプリに保存されます）', 'Please allow the download — it is saved to the Files app'), 4000);
   for (let i = 0; i < n; i++) {
-    toast(state.aiOn ? `AI超解像して保存中… ${i + 1} / ${n}` : `保存中… ${i + 1} / ${n}`, 900);
+    toast(state.aiOn
+      ? T(`AI超解像して保存中… ${i + 1} / ${n}`, `Upscaling and saving… ${i + 1} / ${n}`)
+      : T(`保存中… ${i + 1} / ${n}`, `Saving… ${i + 1} / ${n}`), 900);
     await saveOne(i, 'jpg');
     await sleep(IS_IOS ? 700 : 340);
   }
   els.saveAllBtn.disabled = false;
   toast(IS_IOS
-    ? `${n}枚を保存しました。写真アプリに入れるには、画像を長押し→「写真に保存」が確実です`
-    : `${n}枚を保存しました（ブラウザの複数ダウンロード許可が必要な場合があります）`, 5000);
+    ? T(`${n}枚を保存しました。写真アプリに入れるには、画像を長押し→「写真に保存」が確実です`,
+        `Saved ${n} images. To put them in Photos, long-press an image and choose “Save to Photos”.`)
+    : T(`${n}枚を保存しました（ブラウザの複数ダウンロード許可が必要な場合があります）`,
+        `Saved ${n} images (your browser may ask to allow multiple downloads).`), 5000);
 }
 
 async function saveFolder() {
   if (!window.showDirectoryPicker) {
-    toast('このブラウザではフォルダ保存が使えません。「すべてJPGで保存」をお使いください。');
+    toast(T('このブラウザではフォルダ保存が使えません。「すべてJPGで保存」をお使いください。',
+      'Folder saving is not available in this browser. Please use “Save all as JPG”.'));
     return;
   }
   let dir;
@@ -1074,7 +1120,7 @@ async function saveFolder() {
   els.saveFolderBtn.disabled = true;
   const n = state.candidates.length;
   for (let i = 0; i < n; i++) {
-    toast(`保存中… ${i + 1} / ${n}`, 900);
+    toast(T(`保存中… ${i + 1} / ${n}`, `Saving… ${i + 1} / ${n}`), 900);
     try {
       let blob, name;
       {
@@ -1090,7 +1136,7 @@ async function saveFolder() {
     } catch (e) { console.error(e); }
   }
   els.saveFolderBtn.disabled = false;
-  toast(`${n}枚をフォルダに保存しました`, 3500);
+  toast(T(`${n}枚をフォルダに保存しました`, `Saved ${n} images to the folder`), 3500);
 }
 
 /* ---------- AI超解像（端末内AI・API不要） ---------- */
@@ -1147,7 +1193,7 @@ async function ensureSr(c, opts = {}) {
   return aiEnqueue(async () => {
     if (!state.aiOn) return null;
     if (c.sr && c.sr.key === key) return c.sr;
-    setAiStatus('高画質化中…（AI超解像）', 'busy');
+    setAiStatus(T('高画質化中…（AI超解像）', 'Enhancing… (AI upscaling)'), 'busy');
     try {
       const full = await fullResFrame(c.t);
       const r = cropRect(c.box, full.width, full.height, key);
@@ -1165,7 +1211,8 @@ async function ensureSr(c, opts = {}) {
       c.sr = null;
       if (!state.aiFailNotified) {
         state.aiFailNotified = true;
-        toast('この画像はAI超解像にできませんでした（端末のメモリ不足などの可能性）。標準の高画質補正で保存します。', 6000);
+        toast(T('この画像はAI超解像にできませんでした（端末のメモリ不足などの可能性）。標準の高画質補正で保存します。',
+          'AI upscaling failed for this image (possibly low device memory). It will be saved with standard enhancement.'), 6000);
       }
       return null;
     }
@@ -1176,7 +1223,8 @@ async function ensureSr(c, opts = {}) {
 async function enableAi({ demo = true } = {}) {
   if (state.aiOn) return true;
   if (!aiSupported()) {
-    setAiStatus('この端末・ブラウザではAI超解像を使えません（WebGL非対応）。標準の高画質補正は使えます。', 'ng');
+    setAiStatus(T('この端末・ブラウザではAI超解像を使えません（WebGL非対応）。標準の高画質補正は使えます。',
+      'AI upscaling is not available in this browser (no WebGL). Standard enhancement still works.'), 'ng');
     els.aiSrChk.checked = false;
     return false;
   }
@@ -1186,7 +1234,8 @@ async function enableAi({ demo = true } = {}) {
     state.aiOn = true;
     state.aiFailNotified = false;
     els.aiSrChk.checked = true;
-    setAiStatus(`AI超解像 ON（2倍・端末内AI）／元の${aiMaxSide()}px → ${aiMaxSide() * 2}px で高画質化します`, 'ok');
+    setAiStatus(T(`AI超解像 ON（2倍・端末内AI）／元の${aiMaxSide()}px → ${aiMaxSide() * 2}px で高画質化します`,
+      `AI upscaling ON (2×, on-device) · enhancing from ${aiMaxSide()}px to ${aiMaxSide() * 2}px`), 'ok');
     if (els.aiAllBtn) els.aiAllBtn.hidden = false;
     for (const ref of cardRefs) applyView(ref);
     if (demo && cardRefs.length) await processCardAi(cardRefs[0]);
@@ -1195,8 +1244,10 @@ async function enableAi({ demo = true } = {}) {
     console.error('AI超解像モデル 読み込み失敗', e);
     state.aiOn = false;
     els.aiSrChk.checked = false;
-    setAiStatus('AI超解像モデルを読み込めませんでした。通信環境を確認してください（標準の高画質補正はそのまま使えます）。', 'ng');
-    toast('AI超解像モデルを読み込めませんでした。標準の高画質補正はそのまま使えます。', 6000);
+    setAiStatus(T('AI超解像モデルを読み込めませんでした。通信環境を確認してください（標準の高画質補正はそのまま使えます）。',
+      'Could not load the AI upscaling model. Check your connection — standard enhancement still works.'), 'ng');
+    toast(T('AI超解像モデルを読み込めませんでした。標準の高画質補正はそのまま使えます。',
+      'Could not load the AI upscaling model. Standard enhancement still works.'), 6000);
     return false;
   } finally {
     els.aiSrChk.disabled = false;
@@ -1208,7 +1259,7 @@ function disableAi() {
   els.aiSrChk.checked = false;
   if (els.aiAllBtn) els.aiAllBtn.hidden = true;
   for (const ref of cardRefs) applyView(ref);
-  setAiStatus('AI超解像 OFF（標準の高画質補正で保存します）', '');
+  setAiStatus(T('AI超解像 OFF（標準の高画質補正で保存します）', 'AI upscaling OFF (saved with standard enhancement)'), '');
   setTimeout(() => { if (!state.aiOn) setAiStatus('', ''); }, 4000);
 }
 
@@ -1221,25 +1272,25 @@ async function processCardAi(ref) {
   }
   ref.srBusy = true;
   const btn = ref.card.querySelector('[data-act="sr"]');
-  if (btn) { btn.disabled = true; btn.textContent = 'AI処理中…'; }
+  if (btn) { btn.disabled = true; btn.textContent = T('AI処理中…', 'AI processing…'); }
   try {
     const sr = await ensureSr(ref.c, {
       onProgress: (p) => {
-        if (btn) btn.textContent = `AI処理中… ${Math.round(p)}%`;
-        setAiStatus(`高画質化中…（AI超解像 ${Math.round(p)}%）`, 'busy');
+        if (btn) btn.textContent = T(`AI処理中… ${Math.round(p)}%`, `AI processing… ${Math.round(p)}%`);
+        setAiStatus(T(`高画質化中…（AI超解像 ${Math.round(p)}%）`, `Enhancing… (AI upscaling ${Math.round(p)}%)`), 'busy');
       },
     });
     applyView(ref);
     if (sr) {
-      setAiStatus(`AI超解像 適用済み（${sr.side}×${sr.side}px）`, 'ok');
+      setAiStatus(T(`AI超解像 適用済み（${sr.side}×${sr.side}px）`, `AI upscaled (${sr.side}×${sr.side}px)`), 'ok');
       const info = ref.card.querySelector('.sizeinfo');
       if (info) info.innerHTML = sizeInfoHtml(ref.c);
     } else {
-      setAiStatus('AI超解像を使えませんでした（標準補正で保存します）', 'ng');
+      setAiStatus(T('AI超解像を使えませんでした（標準補正で保存します）', 'AI upscaling failed (saved with standard enhancement)'), 'ng');
     }
   } finally {
     ref.srBusy = false;
-    if (btn) { btn.disabled = false; btn.textContent = '✨ AI超解像（やり直す）'; }
+    if (btn) { btn.disabled = false; btn.textContent = T('✨ AI超解像（やり直す）', '✨ AI upscale (retry)'); }
   }
 }
 
@@ -1249,11 +1300,11 @@ async function processAllAi() {
     if (!state.aiOn) break;
     const ref = cardRefs[i];
     if (ref.c.sr && ref.c.sr.key === els.cropSel.value) continue;
-    setAiStatus(`AI超解像をまとめて適用中… ${i + 1} / ${cardRefs.length}`, 'busy');
+    setAiStatus(T(`AI超解像をまとめて適用中… ${i + 1} / ${cardRefs.length}`, `Upscaling all… ${i + 1} / ${cardRefs.length}`), 'busy');
     await processCardAi(ref);
     await sleep(0);
   }
-  if (state.aiOn) setAiStatus('AI超解像 適用済み（2倍）', 'ok');
+  if (state.aiOn) setAiStatus(T('AI超解像 適用済み（2倍）', 'AI upscaled (2×)'), 'ok');
 }
 
 
@@ -1266,7 +1317,7 @@ async function lbRender(c, mode) {
   let url;
   if (mode !== 'orig' && state.aiOn) {
     // AI超解像 ON の「補正後」は、AIで2倍にした画像をそのまま見せる
-    els.lbInfo.textContent = '高画質化中…（AI超解像）';
+    els.lbInfo.textContent = T('高画質化中…（AI超解像）', 'Enhancing… (AI upscaling)');
     const sr = await ensureSr(c);
     if (sr) {
       url = canvasToJpegUrl(sr.canvas, 1000);
@@ -1316,11 +1367,12 @@ async function lbShow() {
   els.lbOrig.setAttribute('aria-pressed', String(lb.mode === 'orig'));
   els.lbEnh.setAttribute('aria-pressed', String(lb.mode === 'enh'));
   const sr = (state.aiOn && c.sr && c.sr.key === els.cropSel.value) ? c.sr : null;
-  els.lbEnh.textContent = state.aiOn ? '補正後（AI）' : '補正後';
+  els.lbEnh.textContent = state.aiOn ? T('補正後（AI）', 'Enhanced (AI)') : T('補正後', 'Enhanced');
   const out = outSideFor(c);
-  els.lbInfo.textContent = `${fmtTime(c.t)} ・ 元の顔 ${Math.round(c.facePxW)}×${Math.round(c.facePxH)}px`
-    + (sr ? ` ・ AI超解像 ${sr.side}×${sr.side}px` : '')
-    + ` ・ 出力 ${out}×${out}px`;
+  els.lbInfo.textContent = T(`${fmtTime(c.t)} ・ 元の顔 ${Math.round(c.facePxW)}×${Math.round(c.facePxH)}px`,
+    `${fmtTime(c.t)} · source face ${Math.round(c.facePxW)}×${Math.round(c.facePxH)}px`)
+    + (sr ? T(` ・ AI超解像 ${sr.side}×${sr.side}px`, ` · AI upscaled ${sr.side}×${sr.side}px`) : '')
+    + T(` ・ 出力 ${out}×${out}px`, ` · output ${out}×${out}px`);
 }
 
 function closeLightbox() { els.lightbox.hidden = true; lb.ref = null; }
@@ -1330,7 +1382,9 @@ async function lbSaveImage() {
   if (!ref) return;
   const i = cardRefs.indexOf(ref);
   await saveOne(i, 'jpg');
-  toast(IS_IOS ? '保存しました（「ファイル」または長押しで「写真に保存」）' : '保存しました');
+  toast(IS_IOS
+    ? T('保存しました（「ファイル」または長押しで「写真に保存」）', 'Saved (see Files, or long-press to “Save to Photos”)')
+    : T('保存しました', 'Saved'));
 }
 
 /** 共有シートで保存（iPhoneは「画像を保存」で写真アプリに入る） */
@@ -1348,15 +1402,17 @@ async function lbShareImage() {
     const name = exportName(c, i, 'jpg', usedAi ? 'ai-sr' : 'hq');
     const file = new File([blob], name, { type: 'image/jpeg' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], title: 'ベストショット' });
+      await navigator.share({ files: [file], title: T('ベストショット', 'Best shot') });
     } else {
       downloadBlob(blob, name);
-      toast('共有シートが使えないためダウンロードしました。画像を長押し→「写真に保存」で保存できます', 5000);
+      toast(T('共有シートが使えないためダウンロードしました。画像を長押し→「写真に保存」で保存できます',
+        'The share sheet is unavailable, so the image was downloaded. Long-press it to “Save to Photos”.'), 5000);
     }
   } catch (e) {
     if (e && e.name === 'AbortError') return;
     console.error(e);
-    toast('共有シートを開けませんでした。画像を長押し→「写真に保存」で保存できます', 5000);
+    toast(T('共有シートを開けませんでした。画像を長押し→「写真に保存」で保存できます',
+      'Could not open the share sheet. Long-press the image to “Save to Photos”.'), 5000);
   } finally {
     els.lbShare.disabled = false;
   }
@@ -1394,7 +1450,7 @@ function bind() {
     if (!allowed) { els.startBtn.disabled = false; return; }
     await analyze();
   });
-  els.cancelBtn.addEventListener('click', () => { state.cancelRequested = true; els.progressText.textContent = 'キャンセルしています…'; });
+  els.cancelBtn.addEventListener('click', () => { state.cancelRequested = true; els.progressText.textContent = T('キャンセルしています…', 'Cancelling…'); });
   els.cropSel.addEventListener('change', recropAll);
   els.levelSel.addEventListener('change', recropAll);
   els.saveAllBtn.addEventListener('click', saveAll);
@@ -1402,7 +1458,9 @@ function bind() {
   els.aiSrChk.addEventListener('change', async () => {
     if (!isPro()) {
       els.aiSrChk.checked = false;
-      showLimit('AI超解像はProプランの機能です', `無料プランでは「標準 / 強」の高画質補正が使えます。AI超解像は ${upgradeLink()}。`);
+      showLimit(T('AI超解像はProプランの機能です', 'AI upscaling is a Pro feature'),
+        T(`無料プランでは「標準 / 強」の高画質補正が使えます。AI超解像は ${upgradeLink()}。`,
+          `The free plan includes Standard / Strong enhancement. For AI upscaling, ${upgradeLink()}.`));
       return;
     }
     if (els.aiSrChk.checked) await enableAi({ demo: true });
@@ -1411,7 +1469,7 @@ function bind() {
   if (els.aiAllBtn) {
     els.aiAllBtn.hidden = !isPro();
     els.aiAllBtn.addEventListener('click', async () => {
-      if (!isPro()) { showLimit('AI超解像はProプランの機能です', `${upgradeLink()}`); return; }
+      if (!isPro()) { showLimit(T('AI超解像はProプランの機能です', 'AI upscaling is a Pro feature'), `${upgradeLink()}`); return; }
       if (!state.aiOn) { const ok = await enableAi({ demo: false }); if (!ok) return; }
       els.aiAllBtn.disabled = true;
       try { await processAllAi(); } finally { els.aiAllBtn.disabled = false; }
@@ -1458,22 +1516,24 @@ function applyPlatformUi() {
   if (IS_IOS) {
     els.saveHint.hidden = false;
     els.mobileTip.hidden = false;
-    els.saveAllBtn.textContent = '💾 すべて保存（iPhone）';
+    els.saveAllBtn.textContent = T('💾 すべて保存（iPhone）', '💾 Save all (iPhone)');
   }
   if (navigator.share && navigator.canShare) els.lbShare.hidden = false;
   // AI超解像の可/不可（無料プランではロック）
   if (!aiSupported()) {
     els.aiSrChk.disabled = true;
-    els.aiSrLabel.textContent = 'この端末では使えません';
-    els.aiSrLabel.title = 'WebGL が使えないためAI超解像を実行できません。標準の高画質補正は使えます。';
+    els.aiSrLabel.textContent = T('この端末では使えません', 'Not available on this device');
+    els.aiSrLabel.title = T('WebGL が使えないためAI超解像を実行できません。標準の高画質補正は使えます。',
+      'AI upscaling cannot run because WebGL is unavailable. Standard enhancement still works.');
   } else if (!isPro()) {
     els.aiSrChk.disabled = true;
     els.aiSrChk.checked = false;
-    els.aiSrLabel.textContent = '🔒 月額500円のProプランで利用可能';
-    els.aiSrLabel.title = 'AI超解像（ESRGAN-slim）はProプランの機能です。無料プランでは標準・強の補正が使えます。';
+    els.aiSrLabel.textContent = T('🔒 月額500円のProプランで利用可能', '🔒 Available on Pro — ¥500/mo');
+    els.aiSrLabel.title = T('AI超解像（ESRGAN-slim）はProプランの機能です。無料プランでは標準・強の補正が使えます。',
+      'AI upscaling (ESRGAN-slim) is a Pro feature. The free plan includes Standard and Strong enhancement.');
     els.aiSrLabel.classList.add('locked');
   } else if (IS_IOS) {
-    els.aiSrLabel.textContent = '端末内AI（API不要）';
+    els.aiSrLabel.textContent = T('端末内AI（API不要）', 'On-device AI (no API)');
   }
   if (!isPro() && els.aiAllBtn) els.aiAllBtn.hidden = true;
 }

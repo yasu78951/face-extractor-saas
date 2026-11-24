@@ -84,6 +84,7 @@ def stop_server(proc):
 def new_page(browser, width, height, mobile=False):
     ctx = browser.new_context(
         viewport={"width": width, "height": height},
+        locale="ja-JP",
         device_scale_factor=2 if mobile else 1,
         is_mobile=mobile,
         has_touch=mobile,
@@ -133,6 +134,12 @@ def main():
         browser = p.chromium.launch(
             executable_path=CHROME,
             args=["--no-sandbox", "--disable-dev-shm-usage"],
+            # ローカル検証環境のChromeは共有ライブラリを /workspace/.cache/libs から読む
+            env={
+                **os.environ,
+                "LD_LIBRARY_PATH": "/workspace/.cache/libs"
+                + (":" + os.environ["LD_LIBRARY_PATH"] if os.environ.get("LD_LIBRARY_PATH") else ""),
+            },
         )
 
         # ============ 1) Supabase 未設定（デモ） ============

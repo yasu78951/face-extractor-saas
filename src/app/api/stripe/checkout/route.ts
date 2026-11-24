@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { getViewer } from '@/lib/auth';
 import {
   isStripeConfigured,
@@ -7,6 +8,7 @@ import {
   siteUrlFrom,
   stripePriceId,
 } from '@/lib/env';
+import { LANG_COOKIE, normalizeLang } from '@/lib/i18n';
 import { getStripe } from '@/lib/stripe';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -16,6 +18,16 @@ export const dynamic = 'force-dynamic';
 
 function back(request: Request, path: string) {
   return NextResponse.redirect(new URL(path, siteUrlFrom(request.url)), 303);
+}
+
+/** 決済画面の言語（Cookie `fe_lang` → `?lang=` → 日本語） */
+async function checkoutLocale(request: Request) {
+  const url = new URL(request.url);
+  const fromQuery = normalizeLang(url.searchParams.get('lang'));
+  if (fromQuery) return fromQuery === 'en' ? 'en' : 'ja';
+  const store = await cookies();
+  const fromCookie = normalizeLang(store.get(LANG_COOKIE)?.value);
+  return fromCookie === 'en' ? 'en' : 'ja';
 }
 
 /** 月額500円のサブスクリプションCheckoutセッションを作成してStripeへ送る */
@@ -31,6 +43,7 @@ export async function POST(request: Request) {
   try {
     const stripe = getStripe();
     const base = siteUrlFrom(request.url);
+    const locale = await checkoutLocale(request);
 
     let customerId = viewer.profile.stripe_customer_id;
     if (!customerId) {
@@ -54,7 +67,7 @@ export async function POST(request: Request) {
       line_items: [{ price: stripePriceId, quantity: 1 }],
       allow_promotion_codes: true,
       billing_address_collection: 'auto',
-      locale: 'ja',
+      locale,
       subscription_data: {
         metadata: { supabase_user_id: viewer.user.id },
       },

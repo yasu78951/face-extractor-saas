@@ -3,32 +3,40 @@ import Link from 'next/link';
 import { HERO_FACES } from '@/components/HeroFaces';
 import { getViewer, type Viewer } from '@/lib/auth';
 import { isDemoMode, isStripeConfigured, PRO_PRICE_JPY } from '@/lib/env';
-import { FAQ_ITEMS } from '@/lib/faq';
-import { SITE_DESCRIPTION, SITE_NAME, SITE_OG_IMAGE, SITE_TITLE, SITE_URL } from '@/lib/site';
+import { ogLocale, withLangPath } from '@/lib/i18n';
+import { getLang } from '@/lib/i18n-server';
+import { messages } from '@/lib/messages';
+import { languageAlternates, SITE_OG_IMAGE, SITE_URL, siteNameFor } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = {
-  // トップは検索意図に合わせた文言をそのまま出したいので、タイトルのテンプレートは使わない
-  title: { absolute: SITE_TITLE },
-  description: SITE_DESCRIPTION,
-  alternates: { canonical: '/' },
-  openGraph: {
-    type: 'website',
-    locale: 'ja_JP',
-    siteName: SITE_NAME,
-    title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
-    url: '/',
-    images: [SITE_OG_IMAGE],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
-    images: [SITE_OG_IMAGE.url],
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await getLang();
+  const t = messages[lang].common;
+  const canonical = lang === 'en' ? withLangPath('/', 'en') : '/';
+
+  return {
+    // トップは検索意図に合わせた文言をそのまま出したいので、タイトルのテンプレートは使わない
+    title: { absolute: t.siteTitle },
+    description: t.siteDescription,
+    alternates: { canonical, languages: languageAlternates('/') },
+    openGraph: {
+      type: 'website',
+      locale: ogLocale(lang),
+      siteName: siteNameFor(lang),
+      title: t.siteTitle,
+      description: t.siteDescription,
+      url: canonical,
+      images: [{ ...SITE_OG_IMAGE, alt: t.ogImageAlt }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: t.siteTitle,
+      description: t.siteDescription,
+      images: [SITE_OG_IMAGE.url],
+    },
+  };
+}
 
 /** 構造化データ（JSON-LD）を埋め込む。`<` はエスケープして壊れないようにする。 */
 function JsonLd({ data }: { data: Record<string, unknown> }) {
@@ -40,55 +48,67 @@ function JsonLd({ data }: { data: Record<string, unknown> }) {
   );
 }
 
-const WEB_APPLICATION_JSON_LD: Record<string, unknown> = {
-  '@context': 'https://schema.org',
-  '@type': 'WebApplication',
-  name: SITE_NAME,
-  url: SITE_URL,
-  description: SITE_DESCRIPTION,
-  applicationCategory: 'MultimediaApplication',
-  applicationSubCategory: '動画からの静止画切り出し・顔写真抽出',
-  operatingSystem: 'iOS, Windows, macOS, Android',
-  browserRequirements: 'Safari / Chrome / Edge / Firefox の最新版（AI超解像はWebGLが動作する端末）',
-  inLanguage: 'ja-JP',
-  isAccessibleForFree: true,
-  offers: [
-    {
-      '@type': 'Offer',
-      name: '無料プラン',
-      price: '0',
-      priceCurrency: 'JPY',
-      description: 'ログイン不要で1日3本まで（動画は5分以内）',
-      availability: 'https://schema.org/InStock',
-    },
-    {
-      '@type': 'Offer',
-      name: 'Proプラン',
-      price: String(PRO_PRICE_JPY),
-      priceCurrency: 'JPY',
-      description: '本数・動画の長さ無制限、端末内AI超解像つき（月額・税込）',
-      availability: 'https://schema.org/InStock',
-    },
-  ],
-  featureList: [
-    '動画から「正面・ピント・顔の大きさ」で自動採点し、ベストショットを抽出',
-    '解析・切り出し・高画質化は端末内で完結（動画をアップロードしない）',
-    '端末内AI超解像（ESRGAN-slim）による高画質化',
-    '512 / 768 / 1024pxでの書き出し・一括保存',
-  ],
-};
-
-const FAQ_JSON_LD: Record<string, unknown> = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: FAQ_ITEMS.map((item) => ({
-    '@type': 'Question',
-    name: item.question,
-    acceptedAnswer: { '@type': 'Answer', text: item.answer },
-  })),
-};
+function webApplicationJsonLd(lang: 'ja' | 'en'): Record<string, unknown> {
+  const en = lang === 'en';
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: siteNameFor(lang),
+    url: SITE_URL,
+    description: messages[lang].common.siteDescription,
+    applicationCategory: 'MultimediaApplication',
+    applicationSubCategory: en
+      ? 'Frame extraction and face photo picking from video'
+      : '動画からの静止画切り出し・顔写真抽出',
+    operatingSystem: 'iOS, Windows, macOS, Android',
+    browserRequirements: en
+      ? 'Latest Safari / Chrome / Edge / Firefox (AI upscaling needs a WebGL-capable device)'
+      : 'Safari / Chrome / Edge / Firefox の最新版（AI超解像はWebGLが動作する端末）',
+    inLanguage: en ? 'en' : 'ja-JP',
+    isAccessibleForFree: true,
+    offers: [
+      {
+        '@type': 'Offer',
+        name: en ? 'Free plan' : '無料プラン',
+        price: '0',
+        priceCurrency: 'JPY',
+        description: en
+          ? '3 videos a day without signing in (videos up to 5 minutes)'
+          : 'ログイン不要で1日3本まで（動画は5分以内）',
+        availability: 'https://schema.org/InStock',
+      },
+      {
+        '@type': 'Offer',
+        name: en ? 'Pro plan' : 'Proプラン',
+        price: String(PRO_PRICE_JPY),
+        priceCurrency: 'JPY',
+        description: en
+          ? 'Unlimited videos and length, with on-device AI upscaling (per month, tax included)'
+          : '本数・動画の長さ無制限、端末内AI超解像つき（月額・税込）',
+        availability: 'https://schema.org/InStock',
+      },
+    ],
+    featureList: en
+      ? [
+          'Scores frames for facing the camera, focus and face size, then picks the best shots',
+          'Analysis, cropping and enhancement run on your device (the video is never uploaded)',
+          'On-device AI upscaling (ESRGAN-slim)',
+          'Export at 512 / 768 / 1024 px and save in batch',
+        ]
+      : [
+          '動画から「正面・ピント・顔の大きさ」で自動採点し、ベストショットを抽出',
+          '解析・切り出し・高画質化は端末内で完結（動画をアップロードしない）',
+          '端末内AI超解像（ESRGAN-slim）による高画質化',
+          '512 / 768 / 1024pxでの書き出し・一括保存',
+        ],
+  };
+}
 
 export default async function LandingPage() {
+  const lang = await getLang();
+  const t = messages[lang];
+  const tl = t.landing;
+
   let viewer: Viewer | null = null;
   try {
     viewer = await getViewer();
@@ -98,56 +118,61 @@ export default async function LandingPage() {
   const demo = isDemoMode();
   const stripeReady = isStripeConfigured();
   const upscaleHref = viewer?.isPro ? '/app' : viewer ? '/#pricing' : '/signin?next=%2F%23pricing';
-  const upscaleLabel = viewer?.isPro ? 'Proプラン利用中（ツールを開く）' : '✨ 月額500円・ProプランでAI超解像を使う';
+  const upscaleLabel = viewer?.isPro ? tl.upscale.ctaPro : tl.upscale.ctaUpgrade;
+
+  const faqJsonLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    inLanguage: lang === 'en' ? 'en' : 'ja-JP',
+    mainEntity: t.faq.map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: { '@type': 'Answer', text: item.answer },
+    })),
+  };
 
   return (
     <>
-      <JsonLd data={WEB_APPLICATION_JSON_LD} />
-      <JsonLd data={FAQ_JSON_LD} />
+      <JsonLd data={webApplicationJsonLd(lang)} />
+      <JsonLd data={faqJsonLd} />
       <main className="landing">
       <div className="container">
         <section className="hero">
           <div>
-            <span className="eyebrow">🎬 動画 → 顔写真を自動で選ぶ</span>
+            <span className="eyebrow">{tl.eyebrow}</span>
             <h1>
-              動画から、
+              {tl.titleLine1}
               <br />
-              <span className="accent">いちばん良い顔写真</span>を。
+              <span className="accent">{tl.titleAccent}</span>
+              {tl.titleTail}
             </h1>
-            <p className="hero-lead">
-              長時間の動画から「正面を向いていて・ピントが合っていて・顔が大きい」コマを自動で点数付けして抽出。
-              高画質補正もAI超解像も、すべてお使いの端末の中で完結します。
-            </p>
+            <p className="hero-lead">{tl.lead}</p>
             <div className="hero-actions">
               {viewer ? (
                 <>
                   <Link href="/app" className="btn btn-primary">
-                    顔抽出ツールを開く
+                    {tl.ctaOpen}
                   </Link>
                   <Link href="/#pricing" className="btn btn-outline">
-                    料金を見る
+                    {tl.ctaPricing}
                   </Link>
                 </>
               ) : (
                 <>
                   <Link href="/app" className="btn btn-primary">
-                    無料ではじめる（ログイン不要）
+                    {tl.ctaStart}
                   </Link>
                   <Link href="/#pricing" className="btn btn-outline">
-                    料金を見る
+                    {tl.ctaPricing}
                   </Link>
                 </>
               )}
             </div>
-            <p className="hero-note">
-              {demo
-                ? 'デモモードで表示中です。Supabase を接続するとログイン・回数制限・課金が有効になります。'
-                : 'クレジットカード登録もログインも不要。まずは1日3本まで無料で試せます（Proにする時だけログイン）。'}
-            </p>
+            <p className="hero-note">{demo ? tl.noteDemo : tl.note}</p>
             <div className="hero-badges">
-              <span className="hero-badge">🔒 動画は外部送信なし</span>
-              <span className="hero-badge">📱 iPhone Safari 対応</span>
-              <span className="hero-badge">✨ 端末内AI超解像</span>
+              <span className="hero-badge">{tl.badgePrivate}</span>
+              <span className="hero-badge">{tl.badgeIphone}</span>
+              <span className="hero-badge">{tl.badgeAi}</span>
             </div>
           </div>
 
@@ -161,7 +186,7 @@ export default async function LandingPage() {
                   >
                     <img
                       src={face.src}
-                      alt={face.alt}
+                      alt={lang === 'en' ? face.altEn : face.alt}
                       width={820}
                       height={820}
                       loading={i === 0 ? 'eager' : 'lazy'}
@@ -171,7 +196,7 @@ export default async function LandingPage() {
                     <span className="thumb-rank">{face.rank}</span>
                     <span className="thumb-score">
                       {face.score}
-                      <i>点</i>
+                      <i>{tl.heroPointsUnit}</i>
                     </span>
                   </div>
                 ))}
@@ -179,50 +204,35 @@ export default async function LandingPage() {
             </div>
             <div className="hero-card-caption">
               <span>
-                解析したフレーム <b>612</b> ／ 候補 <b>16</b> 枚
+                {tl.heroFramesLabel} <b>612</b> / {tl.heroCandidatesLabel} <b>16</b>{' '}
+                {tl.heroPicksUnit}
               </span>
-              <span>解析 12.4秒</span>
+              <span>
+                {tl.heroAnalyzedLabel} 12.4{tl.heroSecondsUnit}
+              </span>
             </div>
           </div>
         </section>
 
         <section className="feature-row" id="features">
-          <div className="feature">
-            <div className="feature-icon">🎯</div>
-            <h3>正面・鮮明・大きさで採点</h3>
-            <p>
-              顔の向き（ヨー・ピッチ・ロール）、目の開き、エッジの鮮明さ、明るさを独自スコアで評価。
-              遠くに小さく写った顔も2×2タイル走査で拾います。
-            </p>
-          </div>
-          <div className="feature">
-            <div className="feature-icon">🔒</div>
-            <h3>動画は端末の外へ出ない</h3>
-            <p>
-              解析・切り出し・高画質化はすべてブラウザ内（MediaPipe / Canvas / TensorFlow.js）で実行。
-              動画や画像がサーバーにアップロードされることはありません。
-            </p>
-          </div>
-          <div className="feature">
-            <div className="feature-icon">✨</div>
-            <h3>保存まで一気に</h3>
-            <p>
-              512 / 768 / 1024px で書き出し、iPhoneは共有シートから「画像を保存」。
-              1枚ずつでも、まとめてでも保存できます。
-            </p>
-          </div>
+          {tl.features.map((feature) => (
+            <div className="feature" key={feature.title}>
+              <div className="feature-icon">{feature.icon}</div>
+              <h3>{feature.title}</h3>
+              <p>{feature.body}</p>
+            </div>
+          ))}
         </section>
 
         <section className="section upscale" id="upscale">
           <div className="section-head">
-            <span className="eyebrow">✨ ProのAI超解像</span>
+            <span className="eyebrow">{tl.upscale.eyebrow}</span>
             <h2>
-              同じ1枚が、<span className="accent">ここまで別次元</span>に。
+              {tl.upscale.titlePre}
+              <span className="accent">{tl.upscale.titleAccent}</span>
+              {tl.upscale.titleTail}
             </h2>
-            <p className="upscale-lead">
-              遠目に小さく写った顔も、輪郭・肌・瞳のハイライトまで。
-              Proプランの端末内AI超解像（ESRGAN-slim）なら、その1枚が「使える顔写真」になります。
-            </p>
+            <p className="upscale-lead">{tl.upscale.lead}</p>
           </div>
 
           <div className="ba-wrap">
@@ -230,7 +240,7 @@ export default async function LandingPage() {
               <div className="ba-art">
                 <img
                   src="/images/sample-best-before.jpg"
-                  alt="遠目の顔をそのまま切り出して拡大した、ぼやけて粗い画像"
+                  alt={tl.upscale.beforeAlt}
                   width={820}
                   height={820}
                   loading="lazy"
@@ -240,9 +250,9 @@ export default async function LandingPage() {
               </div>
               <figcaption className="ba-caption">
                 <span className="ba-tag">Before</span>
-                そのまま切り出して拡大（無料プラン）
+                {tl.upscale.beforeCaption}
               </figcaption>
-              <p className="ba-comment">遠目の顔だと、ぼやけて・のっぺり…</p>
+              <p className="ba-comment">{tl.upscale.beforeComment}</p>
             </figure>
 
             <div className="ba-arrow" aria-hidden="true">
@@ -254,7 +264,7 @@ export default async function LandingPage() {
               <div className="ba-art">
                 <img
                   src="/images/sample-best.jpg"
-                  alt="同じ顔写真をAI超解像でくっきり高精細に仕上げた画像"
+                  alt={tl.upscale.afterAlt}
                   width={820}
                   height={820}
                   loading="lazy"
@@ -266,208 +276,150 @@ export default async function LandingPage() {
                 <span className="ba-star s2" aria-hidden="true" />
                 <span className="ba-star s3" aria-hidden="true" />
                 <span className="ba-star s4" aria-hidden="true" />
-                <span className="ba-badge">✨ AI超解像 ON</span>
+                <span className="ba-badge">{tl.upscale.badge}</span>
               </div>
               <figcaption className="ba-caption">
                 <span className="ba-tag pro">After</span>
-                Proプラン：AI超解像 ON
+                {tl.upscale.afterCaption}
               </figcaption>
-              <p className="ba-comment strong">くっきり・ツヤツヤ・生き生き！</p>
+              <p className="ba-comment strong">{tl.upscale.afterComment}</p>
             </figure>
           </div>
 
-          <p className="ba-note">※仕上がりイメージです。元動画の解像度や顔の大きさによって効果は変わります。</p>
+          <p className="ba-note">{tl.upscale.note}</p>
 
           <div className="ba-highlights">
-            <span>輪郭までシャープ</span>
-            <span>肌の質感アップ</span>
-            <span>瞳にハイライト</span>
+            {tl.upscale.highlights.map((item) => (
+              <span key={item}>{item}</span>
+            ))}
           </div>
 
           <div className="ba-cta">
             <Link href={upscaleHref} className="btn btn-primary btn-lg">
               {upscaleLabel}
             </Link>
-            <span className="ba-cta-note">Proなら本数・動画の長さ無制限／カスタマーポータルからいつでも解約OK</span>
+            <span className="ba-cta-note">{tl.upscale.ctaNote}</span>
           </div>
         </section>
 
         <section className="section" id="how">
           <div className="section-head">
-            <h2>使い方は3ステップ</h2>
-            <p>インストール不要。ブラウザで開いて、動画を選ぶだけ。</p>
+            <h2>{tl.how.title}</h2>
+            <p>{tl.how.lead}</p>
           </div>
           <div className="steps">
-            <div className="step">
-              <span className="step-num">1</span>
-              <h3>動画を読み込む</h3>
-              <p>MP4 / MOV / WebM / M4V に対応。iPhoneは写真ライブラリからも選べます。</p>
-            </div>
-            <div className="step">
-              <span className="step-num">2</span>
-              <h3>解析スタート</h3>
-              <p>間隔・候補数・対象の顔を選んでスタート。1秒間隔なら数分の動画でも数十秒で完了します。</p>
-            </div>
-            <div className="step">
-              <span className="step-num">3</span>
-              <h3>ベストショットを保存</h3>
-              <p>点数順に並んだ候補から選んでJPG / PNG保存。ProならAI超解像でさらにくっきり。</p>
-            </div>
+            {tl.how.steps.map((step, i) => (
+              <div className="step" key={step.title}>
+                <span className="step-num">{i + 1}</span>
+                <h3>{step.title}</h3>
+                <p>{step.body}</p>
+              </div>
+            ))}
           </div>
         </section>
 
         <section className="section pricing" id="pricing">
           <div className="section-head">
-            <h2>料金プラン</h2>
-            <p>まずは無料プランで。物足りなくなったら月額500円のProプランへ。</p>
+            <h2>{tl.pricing.title}</h2>
+            <p>{tl.pricing.lead}</p>
           </div>
 
           <div className="price-grid">
             <div className="price-card">
-              <div className="price-name">無料プラン</div>
+              <div className="price-name">{tl.pricing.freeName}</div>
               <div className="price-value">
-                ¥0<small>/ 月</small>
+                {tl.pricing.freePrice}
+                <small>{tl.pricing.perMonth}</small>
               </div>
               <ul className="price-list">
-                <li>
-                  <span className="tick">✓</span>ログイン不要で1日3本まで（日本時間で0時にリセット）
-                </li>
-                <li>
-                  <span className="tick">✓</span>動画の長さ5分（300秒）以内
-                </li>
-                <li>
-                  <span className="tick">✓</span>高画質補正「標準 / 強」
-                </li>
-                <li>
-                  <span className="tick">✓</span>512 / 768 / 1024px 書き出し・一括保存
-                </li>
+                {tl.pricing.freeFeatures.map((item) => (
+                  <li key={item}>
+                    <span className="tick">✓</span>
+                    {item}
+                  </li>
+                ))}
                 <li className="muted">
-                  <span className="lock">🔒</span>AI超解像（ESRGAN-slim）
+                  <span className="lock">🔒</span>
+                  {tl.pricing.freeLocked}
                 </li>
               </ul>
               <Link href="/app" className="btn btn-outline">
-                {viewer ? 'ツールを開く' : '無料ではじめる（ログイン不要）'}
+                {viewer ? tl.pricing.freeCtaViewer : tl.pricing.freeCta}
               </Link>
             </div>
 
             <div className="price-card pro">
-              <span className="price-tag">おすすめ</span>
-              <div className="price-name">Proプラン</div>
+              <span className="price-tag">{tl.pricing.proTag}</span>
+              <div className="price-name">{tl.pricing.proName}</div>
               <div className="price-value">
-                ¥{PRO_PRICE_JPY.toLocaleString('ja-JP')}
-                <small>/ 月（税込）</small>
+                ¥{PRO_PRICE_JPY.toLocaleString(lang === 'ja' ? 'ja-JP' : 'en-US')}
+                <small>{tl.pricing.proPriceNote}</small>
               </div>
+              {tl.pricing.proApprox ? (
+                <p className="price-approx">{tl.pricing.proApprox}</p>
+              ) : null}
               <ul className="price-list">
-                <li>
-                  <span className="tick">✓</span>
-                  <b>本数無制限</b>
-                </li>
-                <li>
-                  <span className="tick">✓</span>
-                  <b>動画の時間制限なし</b>
-                </li>
-                <li>
-                  <span className="tick">✓</span>
-                  <b>端末内AI超解像（ESRGAN-slim）</b>
-                </li>
-                <li>
-                  <span className="tick">✓</span>「✨ AI超解像」「✨ すべてAI超解像」
-                </li>
-                <li>
-                  <span className="tick">✓</span>高画質補正「標準 / 強」・全書き出しサイズ
-                </li>
-                <li>
-                  <span className="tick">✓</span>カスタマーポータルでいつでも解約・カード変更
-                </li>
+                {tl.pricing.proFeatures.map((item, i) => (
+                  <li key={item}>
+                    <span className="tick">✓</span>
+                    {i < 3 ? <b>{item}</b> : item}
+                  </li>
+                ))}
               </ul>
               {viewer?.isPro ? (
                 <Link href="/app" className="btn btn-outline">
-                  Proプラン利用中（ツールを開く）
+                  {tl.pricing.proActive}
                 </Link>
               ) : viewer && isStripeConfigured() ? (
                 <form action="/api/stripe/checkout" method="post">
                   <button type="submit" className="btn btn-primary btn-block">
-                    Proプランをはじめる（月額500円）
+                    {tl.pricing.proStart}
                   </button>
                 </form>
               ) : demo ? (
                 <Link href="/app?plan=pro" className="btn btn-primary">
-                  Pro画面をデモ表示
+                  {tl.pricing.proDemo}
                 </Link>
               ) : (
                 <Link href="/signin?next=/app%3Fupgrade%3D1" className="btn btn-primary">
-                  Proプランをはじめる
+                  {tl.pricing.proStartShort}
                 </Link>
               )}
             </div>
           </div>
           <p className="price-foot">
-            表示価格は税込です。Proプランは毎月自動更新（Stripe）。解約はカスタマーポータルからいつでも可能で、解約後も次回更新日までProの機能が使えます。
-            {!stripeReady && !demo ? '（Stripe未設定のため、現在決済は受け付けていません）' : ''}
+            {tl.pricing.foot}
+            {!stripeReady && !demo ? tl.pricing.footUnavailable : ''}
           </p>
         </section>
 
         <section className="section" id="compare">
           <div className="section-head">
-            <h2>無料プランとProプランの比較</h2>
+            <h2>{tl.compare.title}</h2>
           </div>
           <div className="compare-wrap">
             <table className="compare">
               <thead>
                 <tr>
-                  <th scope="col">機能</th>
-                  <th scope="col">無料プラン</th>
+                  <th scope="col">{tl.compare.headFeature}</th>
+                  <th scope="col">{tl.compare.headFree}</th>
                   <th scope="col" className="pro">
-                    Proプラン（月額500円）
+                    {tl.compare.headPro}
                   </th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <th scope="row">1日の解析本数</th>
-                  <td>3本まで</td>
-                  <td className="yes">無制限</td>
-                </tr>
-                <tr>
-                  <th scope="row">動画の長さ</th>
-                  <td>5分（300秒）以内</td>
-                  <td className="yes">制限なし</td>
-                </tr>
-                <tr>
-                  <th scope="row">ベストショット自動抽出</th>
-                  <td className="yes">✓</td>
-                  <td className="yes">✓</td>
-                </tr>
-                <tr>
-                  <th scope="row">高画質補正（標準 / 強）</th>
-                  <td className="yes">✓</td>
-                  <td className="yes">✓</td>
-                </tr>
-                <tr>
-                  <th scope="row">2×2タイル走査（遠目の顔）</th>
-                  <td className="yes">✓</td>
-                  <td className="yes">✓</td>
-                </tr>
-                <tr>
-                  <th scope="row">書き出しサイズ 512 / 768 / 1024px</th>
-                  <td className="yes">✓</td>
-                  <td className="yes">✓</td>
-                </tr>
-                <tr>
-                  <th scope="row">端末内AI超解像（ESRGAN-slim）</th>
-                  <td className="no">🔒 ロック</td>
-                  <td className="yes">✓</td>
-                </tr>
-                <tr>
-                  <th scope="row">「すべてAI超解像」</th>
-                  <td className="no">🔒 ロック</td>
-                  <td className="yes">✓</td>
-                </tr>
-                <tr>
-                  <th scope="row">プラン変更・解約</th>
-                  <td>—</td>
-                  <td className="yes">カスタマーポータル</td>
-                </tr>
+                {tl.compare.rows.map((row) => (
+                  <tr key={row.feature}>
+                    <th scope="row">{row.feature}</th>
+                    <td className={row.freeTone === 'yes' ? 'yes' : row.freeTone === 'no' ? 'no' : undefined}>
+                      {row.free}
+                    </td>
+                    <td className={row.proTone === 'yes' ? 'yes' : row.proTone === 'no' ? 'no' : undefined}>
+                      {row.pro}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -475,10 +427,10 @@ export default async function LandingPage() {
 
         <section className="section" id="faq">
           <div className="section-head">
-            <h2>よくある質問</h2>
+            <h2>{tl.faqTitle}</h2>
           </div>
           <div className="faq">
-            {FAQ_ITEMS.map((item) => (
+            {t.faq.map((item) => (
               <details key={item.question}>
                 <summary>{item.question}</summary>
                 <div className="answer">{item.answer}</div>
@@ -489,11 +441,11 @@ export default async function LandingPage() {
 
         <section className="cta-band">
           <div>
-            <h2>その動画、眠らせておくのはもったいない。</h2>
-            <p>数十秒で、SNSやプロフィールに使える一枚が見つかります。</p>
+            <h2>{tl.ctaBand.title}</h2>
+            <p>{tl.ctaBand.body}</p>
           </div>
           <Link href="/app" className="btn">
-            {viewer ? 'ツールを開く' : '無料ではじめる（ログイン不要）'}
+            {viewer ? tl.ctaOpen : tl.ctaStart}
           </Link>
         </section>
       </div>
