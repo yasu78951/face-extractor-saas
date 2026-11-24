@@ -78,9 +78,9 @@ export default function UsageBanner({
     return () => window.removeEventListener('fe:usage', handler);
   }, []);
 
-  // 補助記録（localStorage）との表示同期
+  // 補助記録（localStorage）との表示同期。未ログイン（Cookieで数える）ときだけ使う
   useEffect(() => {
-    if (state.plan === 'pro' || limit == null) return;
+    if (!loggedIn || state.plan === 'pro' || limit == null) return;
     const stored = readStoredCount();
     if (stored == null) return;
     const localRemaining = Math.max(0, limit - stored);
@@ -88,7 +88,7 @@ export default function UsageBanner({
       ...prev,
       remaining: prev.remaining == null ? localRemaining : Math.min(prev.remaining, localRemaining),
     }));
-  }, [limit, state.plan]);
+  }, [limit, state.plan, loggedIn]);
 
   // サーバー（Cookie / DB）の正の値とも同期
   useEffect(() => {

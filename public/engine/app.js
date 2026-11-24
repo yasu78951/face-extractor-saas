@@ -64,12 +64,12 @@ async function requestStart(duration) {
     const data = await res.json().catch(() => ({}));
     if (res.ok && data && data.ok) {
       window.__FE_GATE = Object.assign({}, gate(), { remaining: data.remaining, plan: data.plan });
-      rememberUsage(data.used);
+      if (data.anonymous !== false) rememberUsage(data.used);
       window.dispatchEvent(new CustomEvent('fe:usage', { detail: data }));
       return true;
     }
     if (data && data.reason === 'daily_limit') {
-      rememberUsage(data.used);
+      if (data.anonymous !== false) rememberUsage(data.used);
       if (typeof data.remaining === 'number') {
         window.__FE_GATE = Object.assign({}, gate(), { remaining: data.remaining });
         window.dispatchEvent(new CustomEvent('fe:usage', { detail: { plan: 'free', remaining: data.remaining } }));
