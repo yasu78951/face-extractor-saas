@@ -1,0 +1,249 @@
+/* ===== SaaSシェル（/app 用）。エンジンCSS（engine.css）の後に読み込む ===== */
+
+.tool-top {
+  background: linear-gradient(120deg, #1f2a44, #2f4bc4 70%, #6741d9);
+  color: #fff;
+  padding: 22px 0 20px;
+}
+.tool-top-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.tool-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tool-title h1 {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+.tool-title p {
+  font-size: 12.5px;
+  color: #cfd8f5;
+}
+.tool-top .btn-upgrade {
+  background: #fff;
+  color: #2f4bc4;
+  font-size: 13.5px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-weight: 700;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
+}
+.tool-top .btn-upgrade:hover {
+  text-decoration: none;
+  background: #eef1fb;
+}
+
+.usage-banner {
+  max-width: 1120px;
+  margin: 16px auto 0;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--brand);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(20, 30, 60, 0.05), 0 8px 24px rgba(20, 30, 60, 0.04);
+  font-size: 14px;
+  color: var(--ink);
+  width: calc(100% - 40px);
+}
+.usage-banner.pro {
+  border-left-color: #6741d9;
+  background: linear-gradient(100deg, #f6f3ff, #fff 55%);
+}
+.usage-banner b {
+  font-size: 16px;
+  color: var(--brand-dark);
+}
+.usage-banner.pro b {
+  color: #5f3dc4;
+}
+.usage-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--brand);
+  flex: none;
+  box-shadow: 0 0 0 4px rgba(59, 91, 219, 0.15);
+}
+.usage-banner.pro .usage-dot {
+  background: #6741d9;
+  box-shadow: 0 0 0 4px rgba(103, 65, 217, 0.15);
+}
+.usage-sub {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.usage-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.usage-actions .btn,
+.usage-actions button {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 9px;
+  padding: 7px 13px;
+  border: 1px solid #d5dcf6;
+  background: #eef1fb;
+  color: #2f4bc4;
+  cursor: pointer;
+}
+.usage-actions button:hover {
+  background: #e2e8fa;
+}
+.usage-actions .btn-primary-solid {
+  background: linear-gradient(120deg, #6741d9, #4263eb);
+  color: #fff;
+  border-color: transparent;
+}
+
+.tool-notice {
+  max-width: 1120px;
+  margin: 14px auto 0;
+  padding: 0 20px;
+}
+
+/* 無料プランのロック表示 */
+.ai-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #5f3dc4;
+  background: #f3f0ff;
+  border: 1px solid #e0d7fb;
+  border-radius: 8px;
+  padding: 5px 9px;
+  line-height: 1.4;
+  width: 100%;
+  justify-content: center;
+}
+.ai-lock:hover {
+  text-decoration: none;
+  background: #ebe5ff;
+}
+.aisw.locked {
+  background: #f4f3f8;
+  border-color: #e3e1ee;
+  cursor: not-allowed;
+}
+.aisw.locked .aisw-text {
+  color: #6b6486;
+  white-space: normal;
+  font-size: 12.5px;
+}
+.toolbar .btn-sr.lock-btn {
+  background: #f4f3f8;
+  color: #6b6486;
+  border: 1px dashed #cfcbe2;
+  font-weight: 700;
+}
+.toolbar .btn-sr.lock-btn:hover {
+  text-decoration: none;
+  background: #eceaf5;
+}
+
+.engine-footer {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 20px 48px;
+  color: var(--ink-3);
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.9;
+}
+.engine-footer a {
+  color: var(--brand);
+}
+.upgrade-link {
+  color: var(--brand);
+  font-weight: 700;
+  text-decoration: underline;
+}
+#loadError .upgrade-link {
+  color: #8a1414;
+}
+
+/* ステップ番号の説明カード */
+.pro-tip {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.pro-tip b {
+  color: #5f3dc4;
+}
+
+@media (max-width: 560px) {
+  .tool-top {
+    padding: 16px 0 14px;
+  }
+  .tool-top-inner {
+    padding: 0 14px;
+    gap: 10px;
+  }
+  .tool-title h1 {
+    font-size: 17px;
+  }
+  .tool-title p {
+    font-size: 11.5px;
+  }
+  .tool-top .btn-upgrade {
+    width: 100%;
+    text-align: center;
+    padding: 9px 12px;
+  }
+  .usage-banner {
+    width: calc(100% - 24px);
+    margin-top: 12px;
+    padding: 11px 13px;
+    font-size: 13px;
+    gap: 8px;
+  }
+  .usage-banner b {
+    font-size: 15px;
+  }
+  .usage-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+  .usage-actions form,
+  .usage-actions .btn {
+    flex: 1;
+  }
+  .usage-actions button,
+  .usage-actions .btn {
+    width: 100%;
+  }
+  .tool-notice {
+    padding: 0 12px;
+  }
+}
+
+/* AIモデル/端末内処理のステータス行 */
+.model-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
