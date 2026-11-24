@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured, siteUrlFrom } from '@/lib/env';
+import { safeNextPath } from '@/lib/next-path';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -10,8 +11,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const base = siteUrlFrom(request.url);
   const code = url.searchParams.get('code');
-  const nextParam = url.searchParams.get('next') ?? '/app';
-  const next = nextParam.startsWith('/') ? nextParam : '/app';
+  const next = safeNextPath(url.searchParams.get('next'));
 
   if (!isSupabaseConfigured()) {
     return NextResponse.redirect(new URL('/signin?error=demo', base), 303);

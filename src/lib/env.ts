@@ -15,6 +15,19 @@ export const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET ?? '';
 export const stripePortalConfigurationId = process.env.STRIPE_PORTAL_CONFIGURATION_ID ?? '';
 
 /**
+ * 未ログイン（匿名）利用の回数Cookieを署名する鍵（任意）。
+ * 未設定なら SUPABASE_SERVICE_ROLE_KEY を使い、それも無いデモモードでは開発用の固定鍵にフォールバックする。
+ * 値を変えると既存Cookieの署名が無効になり、その日の回数はリセットされる。
+ */
+export const usageCookieSecretEnv = process.env.USAGE_COOKIE_SECRET ?? '';
+
+const DEV_USAGE_COOKIE_SECRET = 'face-extractor-anon-usage-dev-secret';
+
+export function usageCookieSecret(): string {
+  return usageCookieSecretEnv || supabaseServiceRoleKey || DEV_USAGE_COOKIE_SECRET;
+}
+
+/**
  * 公開URL。Vercelでは VERCEL_PROJECT_PRODUCTION_URL から組み立てる。
  * ローカル検証時は未設定でよい（request.url をフォールバックに使う）。
  */

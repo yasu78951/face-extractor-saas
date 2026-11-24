@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 import ExtractorTool from '@/components/ExtractorTool';
 import UsageBanner from '@/components/UsageBanner';
-import { getUsageStatus, getViewer } from '@/lib/auth';
+import { getUsageStatus, getViewer, type Viewer } from '@/lib/auth';
+import { ANON_USAGE_COOKIE } from '@/lib/anon-usage';
+import { anonUsageSnapshot } from '@/lib/usage';
 import { FREE_DAILY_LIMIT, isDemoMode, isStripeConfigured } from '@/lib/env';
-import { demoUsed } from '@/lib/demo-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,28 +17,44 @@ type Search = {
 
 export default async function AppPage({ searchParams }: { searchParams: Promise<Search> }) {
   const sp = await searchParams;
-  const upgradeHref = '/#pricing';
   const demo = isDemoMode();
+  const pricingHref = `/#pricing`;
+  /** 未ログインなら、ログイン（＝アカウント作成）してから料金プランへ進む */
+  const upgradeHref = `/signin?next=${encodeURIComponent(pricingHref)}`;
+  const loginHref = `/signin?next=${encodeURIComponent('/app')}`;
 
+  let loggedIn = false;
   let isPro = false;
   let remaining: number | null = FREE_DAILY_LIMIT;
   let canManage = false;
 
-  if (demo) {
-    isPro = sp.plan === 'pro';
-    if (!isPro) {
-      const store = await cookies();
-      const demoId = store.get('fe_demo')?.value ?? 'default';
-      remaining = Math.max(0, FREE_DAILY_LIMIT - demoUsed(demoId));
+  let viewer: Viewer | null = null;
+  if (!demo) {
+    try {
+      viewer = await getViewer();
+    } catch {
+      viewer = null;
     }
-  } else {
-    const viewer = await getViewer();
-    if (!viewer) redirect(`/signin?next=${encodeURIComponent('/app')}`);
+  }
+
+  if (viewer) {
+    loggedIn = true;
     isPro = viewer.isPro;
     canManage = Boolean(viewer.profile.stripe_customer_id) && isStripeConfigured();
-    const usage = await getUsageStatus(viewer.user.id, viewer.profile.plan);
-    remaining = usage.remaining;
+    if (!isPro) {
+      const usage = await getUsageStatus(viewer.user.id, viewer.profile.plan);
+      remaining = usage.remaining;
+    }
+  } else if (demo && sp.plan === 'pro') {
+    // デモモードのPro画面プレビュー
+    isPro = true;
+  } else {
+    // 未ログイン: 署名Cookieの使用数から残り回数（ログイン不要・ブラウザ単位）
+    const store = await cookies();
+    remaining = anonUsageSnapshot(store.get(ANON_USAGE_COOKIE)?.value).remaining;
   }
+
+  const effectiveUpgradeHref = loggedIn ? pricingHref : upgradeHref;
 
   const checkoutSuccess = sp.checkout === 'success';
   const checkoutCancel = sp.checkout === 'cancel';
@@ -50,12 +66,22 @@ export default async function AppPage({ searchParams }: { searchParams: Promise<
         <div className="tool-top-inner">
           <div className="tool-title">
             <h1>🎬 顔写真抽出ツール</h1>
-            <p>動画は端末内だけで処理されます（外部送信なし）</p>
+            <p>
+              動画は端末内だけで処理されます（外部送信なし）
+              {!loggedIn ? '／ログインなしでお試しいただけます' : ''}
+            </p>
           </div>
           {!isPro ? (
-            <a className="btn btn-upgrade" href={upgradeHref}>
-              Proプランで本数無制限・AI超解像（月額500円）
-            </a>
+            <div className="tool-top-actions">
+              {!loggedIn ? (
+                <a className="btn btn-top-login" href={loginHref}>
+                  ログイン
+                </a>
+              ) : null}
+              <a className="btn btn-upgrade" href={effectiveUpgradeHref}>
+                Proプランで本数無制限・AI超解像（月額500円）
+              </a>
+            </div>
           ) : (
             <Link className="btn btn-upgrade" href="/">
               サービス紹介へ
@@ -68,9 +94,11 @@ export default async function AppPage({ searchParams }: { searchParams: Promise<
         plan={isPro ? 'pro' : 'free'}
         remaining={remaining}
         limit={FREE_DAILY_LIMIT}
-        upgradeHref={upgradeHref}
+        upgradeHref={effectiveUpgradeHref}
         canManage={canManage}
         demo={demo}
+        loggedIn={loggedIn}
+        loginHref={loginHref}
       />
 
       <div className="tool-notice">
@@ -106,7 +134,7 @@ export default async function AppPage({ searchParams }: { searchParams: Promise<
         ) : null}
       </div>
 
-      <ExtractorTool isPro={isPro} upgradeHref={upgradeHref} />
+      <ExtractorTool isPro={isPro} upgradeHref={effectiveUpgradeHref} remaining={remaining} anonymous={!loggedIn} />
     </>
   );
 }

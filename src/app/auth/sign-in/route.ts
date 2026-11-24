@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured, siteUrlFrom } from '@/lib/env';
+import { safeNextPath } from '@/lib/next-path';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
 
   const form = await request.formData();
   const email = String(form.get('email') ?? '').trim();
-  const next = String(form.get('next') ?? '/app');
+  const next = safeNextPath(String(form.get('next') ?? '/app'));
 
   if (!EMAIL_RE.test(email)) {
     return NextResponse.redirect(new URL('/signin?error=email', base), 303);

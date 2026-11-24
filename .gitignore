@@ -11,3 +11,4 @@ next-env.d.ts
 
 screenshots/
 verify-report.json
+verify-anon-report.json

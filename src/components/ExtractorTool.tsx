@@ -9,6 +9,8 @@ declare global {
       remaining: number | null;
       plan?: string;
       upgradeUrl: string;
+      /** 未ログイン（Cookieで回数を数えている）か */
+      anonymous?: boolean;
     };
     __FE_SCRIPT_ADDED?: boolean;
     __FE_BOOTED?: boolean;
@@ -18,6 +20,10 @@ declare global {
 type Props = {
   isPro: boolean;
   upgradeHref: string;
+  /** サーバーが返した本日の残り回数（初期表示用） */
+  remaining?: number | null;
+  /** 未ログイン利用者か */
+  anonymous?: boolean;
 };
 
 /**
@@ -25,13 +31,19 @@ type Props = {
  * マークアップのID・クラスはエンジンが参照するため変更しない。
  * エンジンはマウント後に <script type="module"> で読み込む。
  */
-export default function ExtractorTool({ isPro, upgradeHref }: Props) {
+export default function ExtractorTool({ isPro, upgradeHref, remaining = null, anonymous = false }: Props) {
   const started = useRef(false);
 
   useEffect(() => {
     if (started.current || window.__FE_SCRIPT_ADDED) return;
     started.current = true;
-    window.__FE_GATE = { isPro, remaining: null, plan: isPro ? 'pro' : 'free', upgradeUrl: upgradeHref };
+    window.__FE_GATE = {
+      isPro,
+      remaining: isPro ? null : remaining,
+      plan: isPro ? 'pro' : 'free',
+      upgradeUrl: upgradeHref,
+      anonymous,
+    };
 
     const script = document.createElement('script');
     script.type = 'module';
@@ -39,7 +51,7 @@ export default function ExtractorTool({ isPro, upgradeHref }: Props) {
     script.async = true;
     document.body.appendChild(script);
     window.__FE_SCRIPT_ADDED = true;
-  }, [isPro, upgradeHref]);
+  }, [isPro, upgradeHref, remaining, anonymous]);
 
   return (
     <>

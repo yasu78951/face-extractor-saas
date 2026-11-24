@@ -16,8 +16,25 @@ const FREE_DAILY_LIMIT = 3;
 const FREE_MAX_SECONDS = 300;
 const gate = () => window.__FE_GATE || { isPro: false, remaining: null, upgradeUrl: '/#pricing' };
 const isPro = () => !!gate().isPro;
+const isAnonymous = () => !!gate().anonymous;
 const upgradeHref = () => gate().upgradeUrl || '/#pricing';
 const upgradeLink = (label = '月額500円のProプランを見る') => `<a class="upgrade-link" href="${upgradeHref()}">${label} →</a>`;
+
+/* 未ログイン利用の補助記録（サーバーの署名Cookieが正。こちらは表示同期用） */
+const USAGE_STORAGE_KEY = 'fe_usage';
+function todayJst() {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date());
+  } catch (e) {
+    return new Date().toISOString().slice(0, 10);
+  }
+}
+function rememberUsage(used) {
+  if (typeof used !== 'number' || !(used >= 0)) return;
+  try { localStorage.setItem(USAGE_STORAGE_KEY, JSON.stringify({ d: todayJst(), n: used })); } catch (e) { /* ignore */ }
+}
 
 function showLimit(title, detail) {
   els.loadError.innerHTML = `<b>${title}</b><br>${detail}`;
@@ -47,16 +64,29 @@ async function requestStart(duration) {
     const data = await res.json().catch(() => ({}));
     if (res.ok && data && data.ok) {
       window.__FE_GATE = Object.assign({}, gate(), { remaining: data.remaining, plan: data.plan });
+      rememberUsage(data.used);
       window.dispatchEvent(new CustomEvent('fe:usage', { detail: data }));
       return true;
     }
     if (data && data.reason === 'daily_limit') {
+      rememberUsage(data.used);
+      if (typeof data.remaining === 'number') {
+        window.__FE_GATE = Object.assign({}, gate(), { remaining: data.remaining });
+        window.dispatchEvent(new CustomEvent('fe:usage', { detail: { plan: 'free', remaining: data.remaining } }));
+      }
+      const anon = data.anonymous !== undefined ? !!data.anonymous : isAnonymous();
+      const lead = anon
+        ? '無料プランはログインなしで1日3本まで試せます（日本時間の0時にリセット）。'
+        : '無料プランは1日3本までです（日本時間の0時にリセット）。';
+      const cta = anon
+        ? 'ログインしてProプラン（月額500円）にすると、本数無制限・時間制限なし・AI超解像が使えます。'
+        : '本数を気にせず使うならProプラン（月額500円）がおすすめです。';
       showLimit('本日の無料回数（3回）を使い切りました',
-        `無料プランは1日3本までです（日本時間の0時にリセット）。本数を気にせず使うなら ${upgradeLink()}。`);
+        `${lead}${cta} ${upgradeLink(anon ? 'ログインしてProプランを見る' : '月額500円のProプランを見る')}`);
     } else if (data && data.reason === 'duration_limit') {
-      showLimit('無料プランは5分（300秒）までの動画に対応しています', `5分を超える動画は ${upgradeLink()}。`);
+      showLimit('無料プランは5分（300秒）までの動画に対応しています', `5分を超える動画は ${upgradeLink('Proプランなら時間制限なし')}。`);
     } else if (data && data.reason === 'unauthenticated') {
-      showLimit('ログインが必要です', 'ログインし直してから、もう一度お試しください。');
+      showLimit('ログインが必要です', `ログインし直すか、${upgradeLink('ログインして続ける')}`);
     } else {
       showLimit('解析を開始できませんでした',
         `${(data && data.message) || '利用状況を確認できませんでした。時間をおいてもう一度お試しください。'} ${upgradeLink()}`);

@@ -2,6 +2,7 @@ import type { User } from '@supabase/supabase-js';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { FREE_DAILY_LIMIT, isSupabaseAdminConfigured, isSupabaseConfigured } from '@/lib/env';
+import { jstToday } from '@/lib/jst';
 
 export type PlanId = 'free' | 'pro';
 
@@ -36,14 +37,7 @@ export function isProPlan(plan: string | null | undefined): boolean {
 }
 
 /** 日本時間（Asia/Tokyo）のYYYY-MM-DD */
-export function jstToday(now: Date = new Date()): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Tokyo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(now);
-}
+export { jstToday };
 
 export async function getViewer(): Promise<Viewer | null> {
   if (!isSupabaseConfigured()) return null;

@@ -39,19 +39,10 @@ export default async function LandingPage() {
                     料金を見る
                   </Link>
                 </>
-              ) : demo ? (
-                <>
-                  <Link href="/app" className="btn btn-primary">
-                    デモで試してみる（ログインなし）
-                  </Link>
-                  <Link href="/#pricing" className="btn btn-outline">
-                    料金を見る
-                  </Link>
-                </>
               ) : (
                 <>
-                  <Link href="/signin" className="btn btn-primary">
-                    無料ではじめる（Google / メール）
+                  <Link href="/app" className="btn btn-primary">
+                    無料ではじめる（ログイン不要）
                   </Link>
                   <Link href="/#pricing" className="btn btn-outline">
                     料金を見る
@@ -62,7 +53,7 @@ export default async function LandingPage() {
             <p className="hero-note">
               {demo
                 ? 'デモモードで表示中です。Supabase を接続するとログイン・回数制限・課金が有効になります。'
-                : 'クレジットカード登録なしで無料プランから使えます。'}
+                : 'クレジットカード登録もログインも不要。まずは1日3本まで無料で試せます（Proにする時だけログイン）。'}
             </p>
             <div className="hero-badges">
               <span className="hero-badge">🔒 動画は外部送信なし</span>
@@ -156,7 +147,7 @@ export default async function LandingPage() {
               </div>
               <ul className="price-list">
                 <li>
-                  <span className="tick">✓</span>1日3本まで（日本時間で0時にリセット）
+                  <span className="tick">✓</span>ログイン不要で1日3本まで（日本時間で0時にリセット）
                 </li>
                 <li>
                   <span className="tick">✓</span>動画の長さ5分（300秒）以内
@@ -171,8 +162,8 @@ export default async function LandingPage() {
                   <span className="lock">🔒</span>AI超解像（ESRGAN-slim）
                 </li>
               </ul>
-              <Link href={viewer ? '/app' : demo ? '/app' : '/signin'} className="btn btn-outline">
-                {viewer ? 'ツールを開く' : demo ? 'デモで試す' : '無料ではじめる'}
+              <Link href="/app" className="btn btn-outline">
+                {viewer ? 'ツールを開く' : '無料ではじめる（ログイン不要）'}
               </Link>
             </div>
 
@@ -314,7 +305,8 @@ export default async function LandingPage() {
             <details>
               <summary>無料プランの「1日3本」はいつリセットされますか？</summary>
               <div className="answer">
-                日本時間（Asia/Tokyo）の0時にリセットされます。解析スタート時にサーバーで回数を確認・加算するため、ブラウザを変えても同じアカウントなら回数は共有されます。
+                日本時間（Asia/Tokyo）の0時にリセットされます。ログインなしでお使いの場合はお使いのブラウザ（Cookie）ごとにカウントし、
+                ログインするとアカウントに紐づくので、端末を変えても同じアカウントなら回数は共有されます。
               </div>
             </details>
             <details>
@@ -343,8 +335,8 @@ export default async function LandingPage() {
             <h2>その動画、眠らせておくのはもったいない。</h2>
             <p>数十秒で、SNSやプロフィールに使える一枚が見つかります。</p>
           </div>
-          <Link href={viewer || demo ? '/app' : '/signin'} className="btn">
-            {viewer ? 'ツールを開く' : demo ? 'デモを開く' : '無料ではじめる'}
+          <Link href="/app" className="btn">
+            {viewer ? 'ツールを開く' : '無料ではじめる（ログイン不要）'}
           </Link>
         </section>
       </div>

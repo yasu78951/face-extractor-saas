@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getViewer, type Viewer } from '@/lib/auth';
 import { isDemoMode, isSupabaseConfigured } from '@/lib/env';
+import { safeNextPath } from '@/lib/next-path';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,15 +23,16 @@ const ERROR_MESSAGES: Record<string, string> = {
 
 export default async function SignInPage({ searchParams }: { searchParams: Promise<Search> }) {
   const sp = await searchParams;
+  const next = safeNextPath(sp.next);
+
   let viewer: Viewer | null = null;
   try {
     viewer = await getViewer();
   } catch {
     viewer = null;
   }
-  if (viewer) redirect('/app');
+  if (viewer) redirect(next);
 
-  const next = sp.next && sp.next.startsWith('/') ? sp.next : '/app';
   const configured = isSupabaseConfigured();
   const demo = isDemoMode();
 
@@ -40,7 +42,13 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
         <h1>ログイン / 新規登録</h1>
         <p className="lead">
           アカウントを作ると、1日の利用回数がアカウントに紐づきます（同じアカウントなら端末を変えても回数は共有）。
+          Proプランもここからお申し込みいただけます。
         </p>
+
+        <div className="signin-skip">
+          ログインはProプランにする時だけで大丈夫です。{' '}
+          <Link href="/app">ログインなしで無料で試す（1日3本まで）</Link>
+        </div>
 
         {demo ? (
           <div className="notice notice-warn">
@@ -62,7 +70,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
 
         {configured ? (
           <>
-            <a href="/auth/google" className="btn btn-outline btn-block">
+            <a href={`/auth/google?next=${encodeURIComponent(next)}`} className="btn btn-outline btn-block">
               <span aria-hidden="true">G</span> Googleでログイン
             </a>
 

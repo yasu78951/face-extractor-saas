@@ -59,6 +59,9 @@ export function SiteHeader({ viewer }: { viewer: Viewer | null }) {
           ) : (
             <>
               {demo ? <span className="plan-pill">デモモード</span> : null}
+              <Link href="/app" className="btn btn-outline btn-sm">
+                無料で試す
+              </Link>
               <Link href="/signin" className="btn btn-primary btn-sm">
                 ログイン / 新規登録
               </Link>
