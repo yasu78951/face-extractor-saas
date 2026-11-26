@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import { getViewer, type Viewer } from '@/lib/auth';
 import { SiteFooter, SiteHeader } from '@/components/SiteHeader';
@@ -92,6 +93,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <SiteHeader viewer={viewer} lang={lang} />
         {children}
         <SiteFooter lang={lang} />
+        <Analytics />
       </body>
     </html>
   );
